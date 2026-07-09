@@ -112,9 +112,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const currentAdmin = () => state.admins.find((a) => a.id === state.currentUserId) ?? null;
 
     const login = (name?: string, password?: string, mobile?: string, whatsapp?: string) => {
-      const admin = state.admins.find((a) => a.name === name);
-      if (admin) {
-        setState((s) => ({ ...s, currentUserId: admin.id, currentRole: "admin" }));
+      const adminByName = state.admins.find((a) => a.name === name);
+      if (adminByName) {
+        setState((s) => ({ ...s, currentUserId: adminByName.id, currentRole: "admin" }));
         return { ok: true, message: "Logged in as admin." };
       }
       
@@ -124,6 +124,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             setState((s) => ({ ...s, currentUserId: member.id, currentRole: "member" }));
             return { ok: true, message: "Welcome back." };
           } else return { ok: false, message: "Incorrect password." };
+      }
+      
+      const adminById = state.admins.find((a) => a.id === name);
+      if (adminById && password === "admin123") {
+        setState((s) => ({ ...s, currentUserId: adminById.id, currentRole: "admin" }));
+        return { ok: true, message: "Logged in as admin." };
       }
       const maxId = state.members.reduce((max, m) => Math.max(max, parseInt(m.memberId)), 202600);
       const nextId = String(maxId + 1);
