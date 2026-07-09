@@ -60,8 +60,8 @@ export function MemberDashboard() {
   const { updateMember } = useAppState();
 
   
-  // Allow regular members to log their own payments
-  const canLogPayment = true; // Enabled for all for now to test
+  // Allow regular members to log their own payments only if they have an assigned collector
+  const canLogPayment = !!m.adminId && m.adminId !== "adm_ali"; // assuming adm_ali is the system treasurer and collector needs to be assigned
 
   const myTx = state.transactions
     .filter((t) => t.memberId === m.id)
