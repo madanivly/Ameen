@@ -190,6 +190,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         status: isCollector ? "held_by_collector" : "held_by_admin",
         transferredToTreasurer: false,
       };
+      
+      // Persist to Google Sheets
+      fetch('/api/update-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheet: 'Transactions', ...tx }),
+      });
+
       setState((s) => ({ ...s, transactions: [...s.transactions, tx] }));
       return tx;
     };
