@@ -27,9 +27,7 @@ export const monthKey = (d: Date) =>
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 
 function seed(): AppState {
-  const admins: Admin[] = [
-    { id: "adm_ali", name: "Ismail Kallan", role: "admin" },
-  ];
+  const admins: Admin[] = [];
 
   const members: User[] = [];
 
@@ -77,6 +75,7 @@ interface AppStateContextValue {
   logPayment: (input: { memberId: string; adminId: string; type: "registration" | "monthly"; monthKey?: string; amount?: number; }) => Transaction;
   markTransferredToTreasurer: (adminId: string) => TreasurerTransfer | null;
   approvePayment: (transactionId: string, newAmount?: number) => void;
+  rejectPayment: (transactionId: string) => void;
   promoteToAdmin: (memberId: string) => void;
   removeMember: (memberId: string) => void;
   transferMemberAccount: (fromId: string, toId: string) => void;
@@ -133,7 +132,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
       const maxId = state.members.reduce((max, m) => Math.max(max, parseInt(m.memberId)), 202600);
       const nextId = String(maxId + 1);
-      const isFirstMember = state.members.length === 0;
+        const isFirstMember = state.members.length === 0;
       const newMember: User = {
         id: nextId,
         memberId: nextId,
@@ -141,12 +140,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         name: name?.trim() || "Member",
         mobile: mobile || "",
         whatsapp: whatsapp || "",
-        collectorName: isFirstMember ? (name || "Member") : (state.admins[0]?.name || "Admin"),
+        collectorName: "",
         role: "member",
-        adminId: isFirstMember ? nextId : (state.admins[0]?.id || "adm_ali"),
+        adminId: "",
         registrationFeePaid: false,
         joinedAt: new Date().toISOString().slice(0, 10),
       };
+      if (isFirstMember) {
+        newMember.role = "admin";
+        newMember.adminId = nextId;
+        newMember.collectorName = name || "Member";
+      }
       if (isFirstMember) {
         newMember.role = "admin";
         setState((s) => ({
@@ -201,6 +205,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             }
           return t;
         }),
+      }));
+    };
+
+    const rejectPayment = (transactionId: string) => {
+      setState((s) => ({
+        ...s,
+        transactions: s.transactions.filter((t) => t.id !== transactionId),
       }));
     };
 
@@ -358,6 +369,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       totals,
       resetSeed,
       approvePayment,
+      rejectPayment,
     };
   }, [state]);
 

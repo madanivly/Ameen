@@ -22,6 +22,8 @@ export function CollectorDashboard() {
     currentAdmin,
     memberMonthlyPaid,
     logPayment,
+    approvePayment,
+    rejectPayment,
   } = useAppState();
 
   const a = currentAdmin();
@@ -54,44 +56,6 @@ export function CollectorDashboard() {
         title={`${a.name} · Collector Portal`}
         subtitle="Manage your assigned members and approve pending payments."
       >
-        <PublicAnalytics />
-        <Card className="p-5 mb-6 mt-6">
-            <h2 className="mb-3 font-semibold text-slate-900">
-            My Registered Members
-            </h2>
-            <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Tokens</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {myMembers.map((m) => {
-                const isPaid = memberMonthlyPaid(m.id, mkInput);
-                return (
-                    <TableRow key={m.id}>
-                    <TableCell>
-                        <div className="font-medium text-slate-900">{m.name}</div>
-                        <div className="text-xs text-slate-500 font-mono">{m.memberId}</div>
-                    </TableCell>
-                    <TableCell>
-                        <Button variant={isPaid ? "default" : "outline"} size="sm" onClick={() => {
-                        if (!isPaid) {
-                            logPayment({ memberId: m.id, adminId: a.id, type: "monthly", monthKey: mkInput });
-                            toast.success(`Marked ${m.name} as paid for ${mkInput}`);
-                        }
-                        }}>
-                        {isPaid ? "Paid" : "Mark as Collected"}
-                        </Button>
-                    </TableCell>
-                    </TableRow>
-                );
-                })}
-            </TableBody>
-            </Table>
-        </Card>
-
         <Card className="p-5 mb-6">
             <h2 className="mb-3 font-semibold text-slate-900">
             Pending Approvals
@@ -112,11 +76,15 @@ export function CollectorDashboard() {
                                 <TableCell>{t.receiptNo}</TableCell>
                                 <TableCell>{state.members.find(m => m.id === t.memberId)?.name}</TableCell>
                                 <TableCell>{qr(t.amount)}</TableCell>
-                                <TableCell>
+                                <TableCell className="flex gap-2">
                                     <Button size="sm" onClick={() => {
-                                        // Simplified Approve action for collector
+                                        approvePayment(t.id);
                                         toast.success("Approved");
                                     }}>Approve</Button>
+                                    <Button size="sm" variant="destructive" onClick={() => {
+                                        rejectPayment(t.id);
+                                        toast.success("Rejected");
+                                    }}>Reject</Button>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -125,7 +93,37 @@ export function CollectorDashboard() {
             ) : <p className="text-sm text-slate-500">No pending approvals.</p>}
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-5 mb-6">
+            <h2 className="mb-3 font-semibold text-slate-900">
+            My Registered Members
+            </h2>
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Member</TableHead>
+                <TableHead>Tokens</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {myMembers.map((m) => {
+                const isPaid = memberMonthlyPaid(m.id, mkInput);
+                return (
+                    <TableRow key={m.id}>
+                    <TableCell>
+                        <div className="font-medium text-slate-900">{m.name}</div>
+                        <div className="text-xs text-slate-500 font-mono">{m.memberId}</div>
+                    </TableCell>
+                    <TableCell>
+                        {isPaid ? "Paid" : "Not Paid"}
+                    </TableCell>
+                    </TableRow>
+                );
+                })}
+            </TableBody>
+            </Table>
+        </Card>
+
+        <Card className="p-5 mb-6">
         <h2 className="mb-3 font-semibold text-slate-900">
           Transfer History to Admin
         </h2>
@@ -165,6 +163,8 @@ export function CollectorDashboard() {
           </TableBody>
         </Table>
       </Card>
+
+      <PublicAnalytics />
       </AppShell>
   );
 }

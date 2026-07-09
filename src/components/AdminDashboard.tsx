@@ -337,10 +337,7 @@ export function AdminDashboard() {
           <div className="flex flex-wrap gap-2">
             {state.admins.filter(admin => admin.role === 'collector').map(c => (
               <div key={c.id} className="flex gap-1">
-                  <Button variant="secondary" onClick={() => {
-                      setEditingCollector(c);
-                      setCollectorForm({ name: c.name, mobile: c.mobile || "", whatsapp: c.whatsapp || "" });
-                  }}>{c.name} (Edit)</Button>
+                  <Button variant="secondary">{c.name}</Button>
                   <Button variant="destructive" size="sm" onClick={() => removeCollector(c.id)}>×</Button>
               </div>
             ))}
