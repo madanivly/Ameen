@@ -133,25 +133,6 @@ export function Login() {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="collector">Collector Name</Label>
-                    <select
-                      id="collector"
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      value={collector}
-                      onChange={(e) => setCollector(e.target.value)}
-                      required
-                    >
-                      <option value="">Select a collector</option>
-          {state.admins
-            .filter((a) => a.role === "collector")
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-                    </select>
-                  </div>
                 </div>
               )}
               <Button

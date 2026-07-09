@@ -29,9 +29,6 @@ const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 function seed(): AppState {
   const admins: Admin[] = [
     { id: "adm_ali", name: "Ismail Kallan", role: "admin" },
-    { id: "coll_1", name: "Twayyib", role: "collector" },
-    { id: "coll_2", name: "Shameer", role: "collector" },
-    { id: "coll_3", name: "Azeez", role: "collector" },
   ];
 
   const members: User[] = [];
@@ -114,7 +111,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const currentMember = () => state.members.find((m) => m.id === state.currentUserId) ?? null;
     const currentAdmin = () => state.admins.find((a) => a.id === state.currentUserId) ?? null;
 
-    const login = (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string) => {
+    const login = (name?: string, password?: string, mobile?: string, whatsapp?: string) => {
       const admin = state.admins.find((a) => a.name === name);
       if (admin) {
         setState((s) => ({ ...s, currentUserId: admin.id, currentRole: "admin" }));
@@ -130,6 +127,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
       const maxId = state.members.reduce((max, m) => Math.max(max, parseInt(m.memberId)), 202600);
       const nextId = String(maxId + 1);
+      const isFirstMember = state.members.length === 0;
       const newMember: User = {
         id: nextId,
         memberId: nextId,
@@ -137,21 +135,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         name: name?.trim() || "Member",
         mobile: mobile || "",
         whatsapp: whatsapp || "",
-        collectorName: state.admins.find((a) => a.id === collector)?.name || state.admins[0].name,
+        collectorName: isFirstMember ? (name || "Member") : (state.admins[0]?.name || "Admin"),
         role: "member",
-        adminId: collector || state.admins[0].id,
+        adminId: isFirstMember ? nextId : (state.admins[0]?.id || "adm_ali"),
         registrationFeePaid: false,
         joinedAt: new Date().toISOString().slice(0, 10),
       };
-      const existingAdmin = state.admins.find(a => a.name === newMember.name);
-      if (existingAdmin) newMember.role = "admin";
-      setState((s) => ({
-        ...s,
-        members: [...s.members, newMember],
-        currentUserId: newMember.id,
-        currentRole: "member",
-      }));
-      return { ok: true, message: "Account created — pending 10 QR registration fee approval." };
+      if (isFirstMember) {
+        newMember.role = "admin";
+        setState((s) => ({
+          ...s,
+          admins: [...s.admins, { id: newMember.id, name: newMember.name, role: "admin" }],
+          members: [...s.members, newMember],
+          currentUserId: newMember.id,
+          currentRole: "admin",
+        }));
+      } else {
+        setState((s) => ({
+          ...s,
+          members: [...s.members, newMember],
+          currentUserId: newMember.id,
+          currentRole: "member",
+        }));
+      }
+      return { ok: true, message: `Account created${isFirstMember ? " as admin" : ""} — pending 10 QR registration fee approval.` };
     };
 
     const logout = () => setState((s) => ({ ...s, currentUserId: null, currentRole: "member" }));

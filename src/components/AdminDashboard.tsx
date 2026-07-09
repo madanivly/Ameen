@@ -39,6 +39,7 @@ export function AdminDashboard() {
   } = useAppState();
 
   const a = currentAdmin();
+  const isCollector = a?.role === 'collector';
   const [mkInput, setMkInput] = useState<string>(monthKey(new Date()));
   const [invName, setInvName] = useState<string>("");
   const [invDesc, setInvDesc] = useState<string>("");
@@ -311,12 +312,28 @@ export function AdminDashboard() {
       {a.role === 'admin' && (
         <Card className="p-5 mb-6">
           <div className="mb-4 text-xs font-semibold uppercase text-blue-800">Admin: Manage Collectors</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-            <Input placeholder="Collector Name" value={colName} onChange={e => setColName(e.target.value)} />
-            <Input placeholder="Mobile Number" value={colMobile} onChange={e => setColMobile(e.target.value)} />
-            <Input placeholder="WhatsApp Number" value={colWhatsapp} onChange={e => setColWhatsapp(e.target.value)} />
+          <div className="mb-4">
+            <Label>Promote Member to Collector</Label>
+            <select
+                className="w-full rounded-md border p-2"
+                onChange={(e) => {
+                    const memberId = e.target.value;
+                    if (memberId) {
+                        const m = state.members.find(x => x.id === memberId);
+                        if (m) {
+                            addCollector({ name: m.name, mobile: m.mobile, whatsapp: m.whatsapp });
+                            toast.success(`Promoted ${m.name} to collector`);
+                        }
+                    }
+                }}
+            >
+                <option value="">Select a member to promote...</option>
+                {state.members.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+            </select>
           </div>
-          <Button onClick={() => { if (colName) { addCollector({ name: colName, mobile: colMobile, whatsapp: colWhatsapp }); setColName(""); setColMobile(""); setColWhatsapp(""); toast.success("Collector added"); } }}>Add Collector</Button>
+          
           <div className="flex flex-wrap gap-2">
             {state.admins.filter(admin => admin.role === 'collector').map(c => (
               <div key={c.id} className="flex gap-1">

@@ -13,10 +13,11 @@ export function RoleSwitcher() {
   const [open, setOpen] = useState(true);
 
   const setUser = (id: string, role: "member" | "admin" | "collector") => {
-    // Ensure that if a user is a collector, we set their role explicitly to "collector"
-    // even if they also happen to be a member in the system.
     setState((s) => ({ ...s, currentUserId: id, currentRole: role }));
   };
+
+  const currentAdmin = state.admins.find((a) => a.id === state.currentUserId);
+  const isCollector = currentAdmin?.role === "collector";
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-72">
