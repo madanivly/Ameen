@@ -1,5 +1,5 @@
 import { getDoc } from '../lib/google-sheets';
-import type { AppState, Transaction, User, Admin, Investment, MemberInvestmentStake, TreasurerTransfer } from '../types';
+import type { AppState, Transaction, User, Admin, Investment, MemberInvestmentStake, TreasurerTransfer, Expense } from '../types';
 
 export async function GET() {
   try {
@@ -111,6 +111,23 @@ export async function GET() {
       }
     }
 
+    // Parse expenses
+    const expenses: Expense[] = [];
+    for (const row of rows) {
+      const data = row.toObject();
+      if (data.type === 'expense' || (data.id && data.description && data.amount && data.date && !data.memberId && !data.adminId)) {
+        expenses.push({
+          id: data.id,
+          description: data.description,
+          amount: parseFloat(data.amount) || 0,
+          category: data.category || 'Other',
+          date: data.date,
+          addedBy: data.addedBy || 'Unknown',
+          notes: data.notes,
+        } as Expense);
+      }
+    }
+
     const responseData: Partial<AppState> = {
       members,
       admins,
@@ -118,6 +135,7 @@ export async function GET() {
       investments,
       stakes,
       transfers,
+      expenses,
       pendingSignups: [],
     };
 

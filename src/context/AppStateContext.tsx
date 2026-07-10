@@ -253,6 +253,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const transaction = s.transactions.find(t => t.id === transactionId);
         if (!transaction) return s;
         
+        const updatedTx = { ...transaction, amount: newAmount ?? transaction.amount };
+        if (updatedTx.status === "held_by_collector") updatedTx.status = "held_by_admin";
+        else if (updatedTx.status === "held_by_admin") {
+          updatedTx.status = "confirmed";
+          updatedTx.approved = true;
+          updatedTx.transferredToTreasurer = true;
+        }
+        
+        // Persist to Google Sheets
+        fetch('/api/update-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          body: JSON.stringify({ sheet: 'Data', ...updatedTx }),
+        }).then(() => {
+          setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
+        }).catch(err => console.error('Failed to update transaction:', err));
+        
         return {
           ...s,
           members: s.members.map(m => 
@@ -260,14 +280,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
               ? { ...m, registrationFeePaid: true } 
               : m
           ),
-          transactions: s.transactions.map((t) => {
-            if (t.id === transactionId) {
-              const updated = { ...t, amount: newAmount ?? t.amount };
-              if (updated.status === "held_by_collector") return { ...updated, status: "held_by_admin" };
-              if (updated.status === "held_by_admin") return { ...updated, status: "confirmed", approved: true, transferredToTreasurer: true };
-            }
-            return t;
-          }),
+          transactions: s.transactions.map((t) => t.id === transactionId ? updatedTx : t),
         };
       });
     };
@@ -395,10 +408,41 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         addedBy: currentAdmin?.name || "Unknown",
         notes: expense.notes,
       };
+      
+      // Persist to Google Sheets immediately
+      fetch('/api/update-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+        body: JSON.stringify({ sheet: 'Data', type: 'expense', ...newExpense }),
+      }).then(() => {
+        // Trigger refresh to pull updated data from Google Sheets
+        setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
+      }).catch(err => console.error('Failed to save expense to sheet:', err));
+      
       setState((s) => ({ ...s, expenses: [...s.expenses, newExpense] }));
     };
 
     const deleteExpense = (expenseId: string) => {
+      const expense = state.expenses.find(e => e.id === expenseId);
+      
+      // Remove from Google Sheets
+      if (expense) {
+        fetch('/api/update-data', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          body: JSON.stringify({ id: expenseId }),
+        }).then(() => {
+          // Trigger refresh
+          setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
+        }).catch(err => console.error('Failed to delete expense from sheet:', err));
+      }
+      
       setState((s) => ({ ...s, expenses: s.expenses.filter((e) => e.id !== expenseId) }));
     };
 
