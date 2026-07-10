@@ -11,3 +11,13 @@ export const fmtDateTime = (iso: string) =>
     hour: 'numeric',
     minute: 'numeric',
   });
+
+export const fmtMonthKey = (monthKeyStr: string) => {
+  // Convert YYYY-MM to "Month Year" format
+  if (!monthKeyStr || monthKeyStr === 'N/A') return 'N/A';
+  const [year, month] = monthKeyStr.split('-');
+  if (!year || !month) return monthKeyStr;
+  
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+};

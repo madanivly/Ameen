@@ -6,6 +6,8 @@ import { Coins, TrendingUp, Wallet } from "lucide-react";
 export function PublicAnalytics() {
   const { totals, state } = useAppState();
   const t = totals();
+  const totalExpenses = state.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const netBalance = t.balance - totalExpenses;
 
   return (
     <div className="space-y-3">
@@ -33,9 +35,21 @@ export function PublicAnalytics() {
         />
         <StatCard
           icon={<Wallet className="h-4 w-4" />}
+          label="Total Expenses"
+          value={fmt(totalExpenses)}
+          hint={`${state.expenses.length} official expenses`}
+        />
+        <StatCard
+          icon={<Wallet className="h-4 w-4" />}
           label="Balance Amount"
           value={fmt(t.balance)}
-          hint="Funds available for investment"
+          hint="Before expenses"
+        />
+        <StatCard
+          icon={<Wallet className="h-4 w-4" />}
+          label="Net Balance"
+          value={fmt(netBalance)}
+          hint="After all expenses deducted"
         />
       </div>
     </div>

@@ -15,13 +15,16 @@ export function Login() {
   const [mobile, setMobile] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [collector, setCollector] = useState("");
+  const [nomineeName, setNomineeName] = useState("");
+  const [nomineeAddress, setNomineeAddress] = useState("");
+  const [nomineeContact, setNomineeContact] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
     const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const r = login(isRegistering ? name : inputId, password, mobile, whatsapp, collector);
+    const r = login(isRegistering ? name : inputId, password, mobile, whatsapp, collector, nomineeName, nomineeAddress, nomineeContact);
     if (r.ok) {
       setMsg(r.message);
       setErr(null);
@@ -123,18 +126,51 @@ export function Login() {
                       required
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="whatsapp">WhatsApp Number</Label>
-                    <Input
-                      id="whatsapp"
-                      placeholder="+974..."
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
+                   <div>
+                     <Label htmlFor="whatsapp">WhatsApp Number</Label>
+                     <Input
+                       id="whatsapp"
+                       placeholder="+974..."
+                       value={whatsapp}
+                       onChange={(e) => setWhatsapp(e.target.value)}
+                       required
+                     />
+                   </div>
+                   <div className="border-t pt-4 mt-4">
+                     <h3 className="font-semibold text-slate-900 mb-3">Nominee Information</h3>
+                     <div>
+                       <Label htmlFor="nomineeName">Nominee Full Name</Label>
+                       <Input
+                         id="nomineeName"
+                         placeholder="Nominee Name"
+                         value={nomineeName}
+                         onChange={(e) => setNomineeName(e.target.value)}
+                         required
+                       />
+                     </div>
+                     <div className="mt-3">
+                       <Label htmlFor="nomineeAddress">Nominee Address</Label>
+                       <Input
+                         id="nomineeAddress"
+                         placeholder="Nominee Address"
+                         value={nomineeAddress}
+                         onChange={(e) => setNomineeAddress(e.target.value)}
+                         required
+                       />
+                     </div>
+                     <div className="mt-3">
+                       <Label htmlFor="nomineeContact">Nominee Contact Number</Label>
+                       <Input
+                         id="nomineeContact"
+                         placeholder="+974..."
+                         value={nomineeContact}
+                         onChange={(e) => setNomineeContact(e.target.value)}
+                         required
+                       />
+                     </div>
+                   </div>
+                 </div>
+               )}
               <Button
                 type="submit"
                 className="w-full bg-emerald-600 text-white hover:bg-emerald-700"

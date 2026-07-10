@@ -16,6 +16,9 @@ export interface User {
   isCollector?: boolean;
   registrationFeePaid: boolean;
   joinedAt: string; // ISO date
+  nomineeName?: string; // Nominee full name
+  nomineeAddress?: string; // Nominee address
+  nomineeContact?: string; // Nominee contact number
 }
 
 export interface Admin {
@@ -65,22 +68,33 @@ export interface MemberInvestmentStake {
 }
 
 export interface TreasurerTransfer {
-  id: string;
-  adminId: string;
-  amount: number;
-  transferredAt: string; // ISO
-  batchId: string;
-  transactionIds: string[];
+   id: string;
+   adminId: string;
+   amount: number;
+   transferredAt: string; // ISO
+   batchId: string;
+   transactionIds: string[];
+}
+
+export interface Expense {
+   id: string;
+   description: string;
+   amount: number;
+   category: string;
+   date: string; // ISO
+   addedBy: string; // admin name
+   notes?: string;
 }
 
 export interface AppState {
-  currentUserId: string | null; // logged-in email/id
-  currentRole: Role; // dev role switcher
-  members: User[];
-  admins: Admin[];
-  transactions: Transaction[];
-  investments: Investment[];
-  stakes: MemberInvestmentStake[];
-  transfers: TreasurerTransfer[];
-  pendingSignups: { name: string; joinedAt: string }[];
+   currentUserId: string | null; // logged-in email/id
+   currentRole: Role; // dev role switcher
+   members: User[];
+   admins: Admin[];
+   transactions: Transaction[];
+   investments: Investment[];
+   stakes: MemberInvestmentStake[];
+   transfers: TreasurerTransfer[];
+   expenses: Expense[];
+   pendingSignups: { name: string; joinedAt: string }[];
 }

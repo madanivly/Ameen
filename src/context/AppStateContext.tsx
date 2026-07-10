@@ -9,6 +9,7 @@ import {
 import type {
   Admin,
   AppState,
+  Expense,
   Investment,
   MemberInvestmentStake,
   Role,
@@ -16,6 +17,7 @@ import type {
   TreasurerTransfer,
   User,
 } from "@/types";
+import { useGoogleSheetSync } from "@/hooks/useGoogleSheetSync";
 
 const STORAGE_KEY = "ameen-portal-state-v1";
 
@@ -27,26 +29,28 @@ export const monthKey = (d: Date) =>
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 
 function seed(): AppState {
-  const admins: Admin[] = [];
+   const admins: Admin[] = [];
 
-  const members: User[] = [];
+   const members: User[] = [];
 
-  const investments: Investment[] = [];
-  const stakes: MemberInvestmentStake[] = [];
-  const transactions: Transaction[] = [];
-  const transfers: TreasurerTransfer[] = [];
+   const investments: Investment[] = [];
+   const stakes: MemberInvestmentStake[] = [];
+   const transactions: Transaction[] = [];
+   const transfers: TreasurerTransfer[] = [];
+   const expenses: Expense[] = [];
 
-  return {
-    currentUserId: null,
-    currentRole: "member",
-    members,
-    admins,
-    transactions,
-    investments,
-    stakes,
-    transfers,
-    pendingSignups: [],
-  };
+   return {
+     currentUserId: null,
+     currentRole: "member",
+     members,
+     admins,
+     transactions,
+     investments,
+     stakes,
+     transfers,
+     expenses,
+     pendingSignups: [],
+   };
 }
 
 function load(): AppState {
@@ -67,7 +71,7 @@ function load(): AppState {
 interface AppStateContextValue {
   state: AppState;
   setState: React.Dispatch<React.SetStateAction<AppState>>;
-  login: (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string) => { ok: boolean; message: string };
+  login: (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string) => { ok: boolean; message: string };
   logout: () => void;
   setRole: (r: Role) => void;
   currentMember: () => User | null;
@@ -85,6 +89,8 @@ interface AppStateContextValue {
   updateAdmin: (id: string, updates: Partial<Admin>) => void;
   addCollector: (collector: { name: string; mobile: string; whatsapp: string }) => void;
   removeCollector: (id: string) => void;
+  addExpense: (expense: { description: string; amount: number; category: string; notes?: string }) => void;
+  deleteExpense: (expenseId: string) => void;
   addInvestment: (investment: { name: string; description: string; capitalDeployed: number; }) => void;
   updateInvestment: (id: string, investment: Investment) => void;
   missedMonthsCount: (memberId: string) => number;
@@ -94,23 +100,53 @@ interface AppStateContextValue {
   memberActiveInvestedCapital: (memberId: string) => number;
   totals: () => { totalCollected: number; totalActiveCapital: number; totalProfit: number; balance: number };
   resetSeed: () => void;
+  triggerDataRefresh: () => void;
 }
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => load());
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
+  // Set up polling for real-time sync with Google Sheets
+  const isClient = typeof window !== "undefined";
+  useGoogleSheetSync({
+    enabled: isClient,
+    pollInterval: 5000, // Poll every 5 seconds
+    onDataUpdate: (syncedData) => {
+      setState((prevState) => {
+        // Merge synced data with local state, preferring synced data for most fields
+        // but preserving local currentUserId and currentRole
+        return {
+          currentUserId: prevState.currentUserId,
+          currentRole: prevState.currentRole,
+          members: syncedData.members || prevState.members,
+          admins: syncedData.admins || prevState.admins,
+          transactions: syncedData.transactions || prevState.transactions,
+          investments: syncedData.investments || prevState.investments,
+          stakes: syncedData.stakes || prevState.stakes,
+          transfers: syncedData.transfers || prevState.transfers,
+          expenses: syncedData.expenses || prevState.expenses,
+          pendingSignups: syncedData.pendingSignups || prevState.pendingSignups,
+        };
+      });
+    },
+    onError: (error) => {
+      console.error("Failed to sync with Google Sheets:", error);
+    },
+  });
+
   const value = useMemo<AppStateContextValue>(() => {
     const currentMember = () => state.members.find((m) => m.id === state.currentUserId) ?? null;
     const currentAdmin = () => state.admins.find((a) => a.id === state.currentUserId) ?? null;
 
-    const login = (name?: string, password?: string, mobile?: string, whatsapp?: string) => {
+    const login = (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string) => {
       const adminByName = state.admins.find((a) => a.name === name);
       if (adminByName) {
         setState((s) => ({ ...s, currentUserId: adminByName.id, currentRole: "admin" }));
@@ -130,8 +166,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, currentUserId: adminById.id, currentRole: "admin" }));
         return { ok: true, message: "Logged in as admin." };
       }
-      const maxId = state.members.reduce((max, m) => Math.max(max, parseInt(m.memberId)), 202600);
-      const nextId = String(maxId + 1);
+      const namePrefix = (name || "MEM").substring(0, 3).toUpperCase();
+      const nextNumber = state.members.length + 1;
+      const nextId = namePrefix + String(nextNumber).padStart(3, '0');
         const isFirstMember = state.members.length === 0;
       const newMember: User = {
         id: nextId,
@@ -145,6 +182,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         adminId: "",
         registrationFeePaid: false,
         joinedAt: new Date().toISOString().slice(0, 10),
+        nomineeName: nomineeName || "",
+        nomineeAddress: nomineeAddress || "",
+        nomineeContact: nomineeContact || "",
       };
       if (isFirstMember) {
         newMember.role = "admin";
@@ -191,11 +231,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         transferredToTreasurer: false,
       };
       
-      // Persist to Google Sheets
+      // Persist to Google Sheets with cache-busting headers
       fetch('/api/update-data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
         body: JSON.stringify({ sheet: 'Transactions', ...tx }),
+      }).then(() => {
+        // Trigger immediate refresh after successful update
+        setTimeout(() => setRefreshTrigger(prev => prev + 1), 500);
       });
 
       setState((s) => ({ ...s, transactions: [...s.transactions, tx] }));
@@ -203,17 +249,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
 
     const approvePayment = (transactionId: string, newAmount?: number) => {
-      setState((s) => ({
-        ...s,
-        transactions: s.transactions.map((t) => {
+      setState((s) => {
+        const transaction = s.transactions.find(t => t.id === transactionId);
+        if (!transaction) return s;
+        
+        return {
+          ...s,
+          members: s.members.map(m => 
+            m.id === transaction.memberId && transaction.type === 'registration' 
+              ? { ...m, registrationFeePaid: true } 
+              : m
+          ),
+          transactions: s.transactions.map((t) => {
             if (t.id === transactionId) {
               const updated = { ...t, amount: newAmount ?? t.amount };
               if (updated.status === "held_by_collector") return { ...updated, status: "held_by_admin" };
               if (updated.status === "held_by_admin") return { ...updated, status: "confirmed", approved: true, transferredToTreasurer: true };
             }
-          return t;
-        }),
-      }));
+            return t;
+          }),
+        };
+      });
     };
 
     const rejectPayment = (transactionId: string) => {
@@ -228,7 +284,46 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
 
     const removeMember = (memberId: string) => {
-      setState((s) => ({ ...s, members: s.members.filter((m) => m.id !== memberId) }));
+      setState((s) => {
+        const memberToRemove = s.members.find(m => m.id === memberId);
+        if (!memberToRemove) return s;
+        
+        // Find and delete related admin/collector accounts from Google Sheets
+        const relatedAdmins = s.admins.filter((a) => a.id === memberId || a.name === memberToRemove.name);
+        relatedAdmins.forEach(admin => {
+          fetch('/api/update-data', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            },
+            body: JSON.stringify({ id: admin.id, name: admin.name }),
+          }).catch(err => console.error('Failed to delete admin from sheet:', err));
+        });
+
+        // Also delete the member record from Google Sheets
+        fetch('/api/update-data', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          body: JSON.stringify({ id: memberId, name: memberToRemove.name }),
+        }).catch(err => console.error('Failed to delete member from sheet:', err));
+
+        // Remove the member and any related accounts (e.g., if they're also a collector)
+        // Also remove all transactions and stakes associated with this member
+        // If the deleted member is currently logged in, logout
+        return {
+          ...s,
+          currentUserId: s.currentUserId === memberId ? null : s.currentUserId,
+          currentRole: s.currentUserId === memberId ? "member" : s.currentRole,
+          members: s.members.filter((m) => m.id !== memberId),
+          admins: s.admins.filter((a) => a.id !== memberId && a.name !== memberToRemove.name),
+          transactions: s.transactions.filter((t) => t.memberId !== memberId),
+          stakes: s.stakes.filter((st) => st.memberId !== memberId),
+        };
+      });
     };
 
     const transferMemberAccount = (fromId: string, toId: string) => {
@@ -289,6 +384,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, admins: s.admins.filter((a) => a.id !== id) }));
     };
 
+    const addExpense = (expense: { description: string; amount: number; category: string; notes?: string }) => {
+      const currentAdmin = state.admins.find(a => a.id === state.currentUserId);
+      const newExpense: Expense = {
+        id: rid("exp"),
+        description: expense.description,
+        amount: expense.amount,
+        category: expense.category,
+        date: new Date().toISOString(),
+        addedBy: currentAdmin?.name || "Unknown",
+        notes: expense.notes,
+      };
+      setState((s) => ({ ...s, expenses: [...s.expenses, newExpense] }));
+    };
+
+    const deleteExpense = (expenseId: string) => {
+      setState((s) => ({ ...s, expenses: s.expenses.filter((e) => e.id !== expenseId) }));
+    };
+
     const markTransferredToTreasurer = (adminId: string) => {
       const pending = state.transactions.filter((t) => t.adminId === adminId && !t.transferredToTreasurer);
       if (pending.length === 0) return null;
@@ -321,7 +434,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return missed;
     };
 
-    const memberBalance = (memberId: string) => state.transactions.filter((t) => t.memberId === memberId && t.type === "monthly").reduce((s, t) => s + t.amount, 0);
+    const memberBalance = (memberId: string) => state.transactions.filter((t) => t.memberId === memberId && t.type === "monthly" && t.approved).reduce((s, t) => s + t.amount, 0);
 
     const memberActiveInvestedCapital = (memberId: string) => state.stakes.filter((s) => s.memberId === memberId).reduce((sum, s) => {
           const inv = state.investments.find((i) => i.id === s.investmentId);
@@ -337,10 +450,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         }, 0);
 
     const totals = () => {
-      const totalCollected = state.transactions.filter(t => t.approved).reduce((s, t) => s + t.amount, 0);
+      const totalCollected = state.transactions.filter(t => t.approved && t.type === 'monthly').reduce((s, t) => s + t.amount, 0);
       const totalActiveCapital = state.investments.filter((i) => i.status === "active").reduce((s, i) => s + i.capitalDeployed, 0);
       const totalProfit = state.investments.reduce((s, i) => s + i.profitEntries.reduce((p, e) => p + e.amount, 0), 0);
       return { totalCollected, totalActiveCapital, totalProfit, balance: totalCollected - totalActiveCapital };
+    };
+
+    const triggerDataRefresh = () => {
+      setRefreshTrigger(prev => prev + 1);
     };
 
     const resetSeed = () => {
@@ -378,6 +495,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       resetSeed,
       approvePayment,
       rejectPayment,
+      triggerDataRefresh,
+      addExpense,
+      deleteExpense,
     };
   }, [state]);
 

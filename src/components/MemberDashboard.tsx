@@ -21,43 +21,48 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fmt, fmtDate } from "@/lib/format";
+import { fmt, fmtDate, fmtMonthKey } from "@/lib/format";
 import { PublicAnalytics } from "./PublicAnalytics";
 import { AlertTriangle, Lock, TrendingUp, Wallet, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 
 export function MemberDashboard() {
-  const {
-    state,
-    currentMember,
-    memberBalance,
-    memberProfitShare,
-    memberActiveInvestedCapital,
-    missedMonthsCount,
-    memberMonthlyPaid,
-    logPayment,
-  } = useAppState();
+   const {
+     state,
+     currentMember,
+     memberBalance,
+     memberProfitShare,
+     memberActiveInvestedCapital,
+     missedMonthsCount,
+     memberMonthlyPaid,
+     logPayment,
+     reassignMemberToCollector,
+     updateMember,
+   } = useAppState();
 
-  const m = currentMember();
-  if (!m) return null;
+   const m = currentMember();
+   if (!m) return null;
 
-  const balance = memberBalance(m.id);
-  const profit = memberProfitShare(m.id);
-  const activeCapital = memberActiveInvestedCapital(m.id);
-  const missed = missedMonthsCount(m.id);
-  const delinquent = missed > 4;
-  const admin = state.admins.find((a) => a.name === m.collectorName);
-  const collectorName = admin?.name || "Not assigned";
-  const collectorMobile = admin?.mobile || "Not provided";
-  const collectorWhatsapp = admin?.whatsapp || "Not provided";
-  const isCollector = m.role === "collector";
+   const balance = memberBalance(m.id);
+   const profit = memberProfitShare(m.id);
+   const activeCapital = memberActiveInvestedCapital(m.id);
+   const missed = missedMonthsCount(m.id);
+   const delinquent = missed > 4;
+   const admin = state.admins.find((a) => a.name === m.collectorName);
+   const collectorName = admin?.name || "Not assigned";
+   const collectorMobile = admin?.mobile || "Not provided";
+   const collectorWhatsapp = admin?.whatsapp || "Not provided";
+   const isCollector = m.role === "collector";
 
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [name, setName] = useState(m.name);
-  const [mobile, setMobile] = useState(m.mobile);
-  const [whatsapp, setWhatsapp] = useState(m.whatsapp);
-
-  const { updateMember } = useAppState();
+   const [isEditOpen, setIsEditOpen] = useState(false);
+   const [isChooseCollectorOpen, setIsChooseCollectorOpen] = useState(false);
+   const [selectedCollectorId, setSelectedCollectorId] = useState(admin?.id || "");
+   const [name, setName] = useState(m.name);
+   const [mobile, setMobile] = useState(m.mobile);
+   const [whatsapp, setWhatsapp] = useState(m.whatsapp);
+   const [nomineeName, setNomineeName] = useState(m.nomineeName || "");
+   const [nomineeAddress, setNomineeAddress] = useState(m.nomineeAddress || "");
+   const [nomineeContact, setNomineeContact] = useState(m.nomineeContact || "");
 
   
   // Allow regular members to log their own payments only if they have an assigned collector
@@ -69,14 +74,21 @@ export function MemberDashboard() {
 
   const myStakes = state.stakes.filter((s) => s.memberId === m.id);
 
-  // Build 12-month tracker
-  const months: string[] = [];
-  const cursor = new Date();
-  cursor.setDate(1);
-  for (let i = 0; i < 12; i++) {
-    months.unshift(monthKey(cursor));
-    cursor.setMonth(cursor.getMonth() - 1);
-  }
+   // Build 24-month range: 12 months past + 12 months future (starting from next month)
+   const months: string[] = [];
+   const cursor = new Date();
+   cursor.setDate(1);
+   // Go back 12 months from today
+   for (let i = 0; i < 12; i++) {
+     months.unshift(monthKey(cursor));
+     cursor.setMonth(cursor.getMonth() - 1);
+   }
+   // Now go forward 12 months from next month
+   cursor.setMonth(cursor.getMonth() + 13); // Move to next month (13 because we went back 12)
+   for (let i = 0; i < 12; i++) {
+     months.push(monthKey(cursor));
+     cursor.setMonth(cursor.getMonth() + 1);
+   }
 
 
   return (
@@ -91,15 +103,24 @@ export function MemberDashboard() {
                   {m.profilePhoto ? <img src={m.profilePhoto} alt="Profile" className="w-20 h-20 rounded-full object-cover" /> : <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">No Photo</div>}
                   <div>
                       <h3 className="text-xl font-bold">{m.name}</h3>
+                      <p className="text-slate-600 font-mono text-sm">ID: {m.memberId}</p>
                       <p className="text-slate-600">Mobile: {m.mobile}</p>
                       <p className="text-slate-600">WhatsApp: {m.whatsapp}</p>
+                      {m.nomineeName && (
+                        <div className="mt-3 pt-3 border-t border-slate-200">
+                          <p className="text-xs font-semibold text-slate-700 uppercase">Nominee</p>
+                          <p className="text-slate-600">Name: {m.nomineeName}</p>
+                          <p className="text-slate-600">Address: {m.nomineeAddress}</p>
+                          <p className="text-slate-600">Contact: {m.nomineeContact}</p>
+                        </div>
+                      )}
                   </div>
               </div>
               <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogTrigger asChild>
                     <Button variant="outline">Edit Profile</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-h-[80vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>Edit Profile</DialogTitle></DialogHeader>
                     <div className="space-y-3">
                     <Label>Profile Photo</Label>
@@ -120,16 +141,61 @@ export function MemberDashboard() {
                     <Input value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="Mobile" />
                     <Label>WhatsApp</Label>
                     <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp" />
-                    <Button onClick={() => {
-                        updateMember(m.id, { name, mobile, whatsapp });
-                        setIsEditOpen(false);
-                        toast.success("Details updated.");
-                    }}>Save Changes</Button>
+                    
+                    <div className="border-t pt-4 mt-4">
+                      <h3 className="font-semibold text-slate-900 mb-3">Nominee Information</h3>
+                      <Label>Nominee Full Name</Label>
+                      <Input value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} placeholder="Nominee Name" />
+                      <Label className="mt-3">Nominee Address</Label>
+                      <Input value={nomineeAddress} onChange={(e) => setNomineeAddress(e.target.value)} placeholder="Nominee Address" />
+                      <Label className="mt-3">Nominee Contact Number</Label>
+                      <Input value={nomineeContact} onChange={(e) => setNomineeContact(e.target.value)} placeholder="+974..." />
                     </div>
-                </DialogContent>
-                </Dialog>
-          </div>
-      </Card>
+
+                     <Button onClick={() => {
+                         updateMember(m.id, { name, mobile, whatsapp, nomineeName, nomineeAddress, nomineeContact });
+                         setIsEditOpen(false);
+                         toast.success("Details updated.");
+                     }}>Save Changes</Button>
+                     </div>
+                 </DialogContent>
+                 </Dialog>
+                 
+                 <Dialog open={isChooseCollectorOpen} onOpenChange={setIsChooseCollectorOpen}>
+                   <DialogTrigger asChild>
+                       <Button variant="outline" className="ml-2">Choose Collector</Button>
+                   </DialogTrigger>
+                   <DialogContent>
+                       <DialogHeader><DialogTitle>Select Your Collector</DialogTitle></DialogHeader>
+                       <div className="space-y-3">
+                         <Label>Available Collectors</Label>
+                         <select 
+                           value={selectedCollectorId} 
+                           onChange={(e) => setSelectedCollectorId(e.target.value)}
+                           className="w-full border rounded-md p-2"
+                         >
+                           <option value="">Select a collector...</option>
+                           {state.admins.filter(a => a.role === 'collector').map(c => (
+                             <option key={c.id} value={c.id}>{c.name}</option>
+                           ))}
+                         </select>
+                         <Button onClick={() => {
+                           if (!selectedCollectorId) {
+                             toast.error("Please select a collector");
+                             return;
+                           }
+                           const collector = state.admins.find(a => a.id === selectedCollectorId);
+                           if (collector) {
+                             reassignMemberToCollector(m.id, collector);
+                             setIsChooseCollectorOpen(false);
+                             toast.success(`Assigned to collector: ${collector.name}`);
+                           }
+                         }}>Confirm Selection</Button>
+                       </div>
+                   </DialogContent>
+                 </Dialog>
+           </div>
+       </Card>
       {delinquent && (
         <Card className="mb-6 border-red-300 bg-red-50 p-4">
           <div className="flex items-start gap-3">
@@ -181,7 +247,13 @@ export function MemberDashboard() {
               </select>
             </div>
           )}
-          <Input id="m-month" defaultValue={monthKey(new Date())} />
+           <select id="m-month" defaultValue={monthKey(new Date())} className="w-full border rounded p-2">
+             {months.map((mk) => (
+               <option key={mk} value={mk}>
+                 {fmtMonthKey(mk)}
+               </option>
+             ))}
+           </select>
           <Input
             id="m-amount"
             required
@@ -222,6 +294,8 @@ export function MemberDashboard() {
           <div className="grid grid-cols-6 gap-2 sm:grid-cols-12">
             {months.map((mk) => {
               const paid = memberMonthlyPaid(m.id, mk);
+              const [year, month] = mk.split('-');
+              const monthName = new Date(parseInt(year), parseInt(month) - 1, 1).toLocaleDateString(undefined, { month: 'short' });
               return (
                 <div
                   key={mk}
@@ -230,9 +304,10 @@ export function MemberDashboard() {
                       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                       : "border-slate-200 bg-slate-50 text-slate-500"
                   }`}
-                  title={mk}
+                  title={fmtMonthKey(mk)}
                 >
-                  <div className="font-mono text-[10px] opacity-70">{mk.slice(5)}</div>
+                  <div className="font-mono text-[10px] opacity-70">{monthName}</div>
+                  <div className="font-mono text-[9px] opacity-60">{year.slice(2)}</div>
                   <div className="mt-0.5 font-semibold">{paid ? "✓" : "—"}</div>
                 </div>
               );
