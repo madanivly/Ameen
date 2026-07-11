@@ -204,7 +204,8 @@ export function Login() {
               <div className="text-center text-sm">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
                     setIsRegistering(!isRegistering);
                     setMsg(null);
                     setErr(null);
