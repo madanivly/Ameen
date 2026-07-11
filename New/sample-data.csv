@@ -1,0 +1,4 @@
+type,id,name,password,mobile,whatsapp,role,adminId,registrationFeePaid,joinedAt,amount,monthKey,paidAt,status,approved,description,category,date,addedBy,capitalDeployed,status
+member,MEM001,John Doe,pass123,12345678,12345678,member,,true,2026-01-01,,,,,,,,,,,,
+admin,ADM001,Admin User,admin123,87654321,87654321,admin,,,,,,,,,,,,,
+transaction,TX001,MEM001,,,,,MONTHLY,100,2026-01,2026-01-01T10:00:00Z,confirmed,true,,,,,,
