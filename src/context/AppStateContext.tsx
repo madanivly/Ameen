@@ -145,25 +145,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Set up polling for real-time sync with Google Sheets
+  // Set up aggressive polling for real-time sync with Google Sheets (like Supabase)
   const isClient = typeof window !== "undefined" && isInitialized;
   useGoogleSheetSync({
     enabled: isClient,
-    pollInterval: 3000, // Poll every 3 seconds for faster updates
+    pollInterval: 1000, // Poll every 1 second for near real-time updates
     onDataUpdate: (syncedData) => {
       setState((prevState) => {
-        // Deep merge to preserve local user session
+        // Always update - force refresh every poll cycle
         const newState = {
           currentUserId: prevState.currentUserId,
           currentRole: prevState.currentRole,
-          members: syncedData.members || prevState.members,
-          admins: syncedData.admins || prevState.admins,
-          transactions: syncedData.transactions || prevState.transactions,
-          investments: syncedData.investments || prevState.investments,
-          stakes: syncedData.stakes || prevState.stakes,
-          transfers: syncedData.transfers || prevState.transfers,
-          expenses: syncedData.expenses || prevState.expenses,
-          pendingSignups: syncedData.pendingSignups || prevState.pendingSignups,
+          members: syncedData.members ?? prevState.members,
+          admins: syncedData.admins ?? prevState.admins,
+          transactions: syncedData.transactions ?? prevState.transactions,
+          investments: syncedData.investments ?? prevState.investments,
+          stakes: syncedData.stakes ?? prevState.stakes,
+          transfers: syncedData.transfers ?? prevState.transfers,
+          expenses: syncedData.expenses ?? prevState.expenses,
+          pendingSignups: syncedData.pendingSignups ?? prevState.pendingSignups,
         };
         return newState;
       });
