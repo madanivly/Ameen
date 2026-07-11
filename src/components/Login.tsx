@@ -110,7 +110,7 @@ export function Login() {
                      <Label htmlFor="name">Full name</Label>
                      <Input
                        id="name"
-                       placeholder="e.g., John Doe"
+                       placeholder="e.g., Mohammed Saleem"
                        value={name}
                        onChange={(e) => setName(e.target.value)}
                        required
