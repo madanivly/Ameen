@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useAppState } from "@/context/AppStateContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { useAppState } from "../context/AppStateContext";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Card } from "./ui/card";
 import { PublicAnalytics } from "./PublicAnalytics";
 import { ShieldCheck } from "lucide-react";
 
