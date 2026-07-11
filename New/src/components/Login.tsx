@@ -211,10 +211,7 @@ export function Login() {
             </form>
 
             <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              <strong>Demo tips:</strong> try{" "}
-              <code className="font-mono">MEM001</code> (member) or{" "}
-              <code className="font-mono">ADM_ALI</code> (admin). Or use
-              the dev switcher in the corner.
+              <strong>Demo:</strong> Use your actual registered Member ID and password.
             </div>
           </Card>
         </section>
