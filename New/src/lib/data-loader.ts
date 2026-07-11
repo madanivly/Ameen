@@ -32,17 +32,18 @@ export async function getAppStateData(): Promise<Partial<AppState>> {
     for (const row of rows) {
       const data = row.toObject();
 
-      if (data.type === 'member' || (data.id && data.memberId && data.name && data.role === 'member')) {
+      // Relaxed condition to better match imported data
+      if (data.type === 'member' || data.role === 'member') {
         members.push({
-          id: data.id,
-          memberId: data.memberId,
+          id: data.id || data.memberId,
+          memberId: data.memberId || data.id,
           password: data.password,
           name: data.name,
           mobile: data.mobile || '',
           whatsapp: data.whatsapp || '',
           collectorName: data.collectorName || '',
           profilePhoto: data.profilePhoto,
-          role: data.role,
+          role: data.role || 'member',
           adminId: data.adminId,
           isCollector: data.isCollector,
           registrationFeePaid: data.registrationFeePaid === 'true' || data.registrationFeePaid === true,
@@ -56,7 +57,7 @@ export async function getAppStateData(): Promise<Partial<AppState>> {
           mobile: data.mobile,
           whatsapp: data.whatsapp,
         } as Admin);
-      } else if (data.type === 'transaction' || (data.id && data.memberId && data.type === 'registration' || data.type === 'monthly')) {
+      } else if (data.type === 'transaction' || (data.id && data.memberId && (data.type === 'registration' || data.type === 'monthly'))) {
         transactions.push({
           id: data.id,
           memberId: data.memberId,
