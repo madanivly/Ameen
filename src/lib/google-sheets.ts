@@ -12,7 +12,10 @@ if (!SPREADSHEET_ID || !SERVICE_ACCOUNT_EMAIL || !PRIVATE_KEY) {
 const serviceAccountAuth = new JWT({
   email: SERVICE_ACCOUNT_EMAIL,
   key: PRIVATE_KEY,
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive',
+  ],
 });
 
 export const getDoc = async () => {
