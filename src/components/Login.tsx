@@ -84,7 +84,7 @@ export function Login() {
                    <Input
                      id="inputId"
                      type="text"
-                     placeholder="202601"
+                     placeholder="e.g., MEM001"
                      value={inputId}
                      onChange={(e) => setInputId(e.target.value)}
                      required
@@ -97,7 +97,7 @@ export function Login() {
                    <Input
                      id="password"
                      type="password"
-                     placeholder="********"
+                     placeholder="••••••••"
                      value={password}
                      onChange={(e) => setPassword(e.target.value)}
                      required
@@ -110,7 +110,7 @@ export function Login() {
                      <Label htmlFor="name">Full name</Label>
                      <Input
                        id="name"
-                       placeholder="John Doe"
+                       placeholder="e.g., John Doe"
                        value={name}
                        onChange={(e) => setName(e.target.value)}
                        required
@@ -200,10 +200,8 @@ export function Login() {
              </form>
 
              <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-               <strong>Demo tips:</strong> try{" "}
-               <code className="font-mono">202601</code> (member) or{" "}
-               <code className="font-mono">adm_ali</code> (admin). Or use
-               the dev switcher in the corner.
+               <strong>Sign In Instructions:</strong> Use your Member ID (e.g.,{" "}
+               <code className="font-mono">MEM001</code>) and your Password to sign in. If you don't have an account, click "Need an account? Register" to create one.
              </div>
           </Card>
         </section>
