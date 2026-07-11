@@ -3,23 +3,33 @@ import { getDoc } from '../lib/google-sheets';
 export async function POST(req: Request) {
   try {
     const doc = await getDoc();
-    const sheet = doc.sheetsByTitle['Data'] || (await doc.addSheet({ title: 'Data' }));
+    let sheet = doc.sheetsByTitle['Data'];
+    if (!sheet) {
+      sheet = await doc.addSheet({ title: 'Data' });
+    }
+    
     const data = await req.json();
     
+    // Remove the 'sheet' field if it exists (it's not a data field)
+    const { sheet: sheetName, ...rowData } = data;
+    
+    console.log('Saving to sheet:', { rowData });
+    
     // Check if this is an update (id exists) or a new row
-    if (data.id) {
+    if (rowData.id) {
       const rows = await sheet.getRows();
       let found = false;
       
       // Try to find and update existing row
       for (const row of rows) {
-        const rowData = row.toObject();
-        if (rowData.id === data.id) {
-          // Update existing row
-          Object.keys(data).forEach(key => {
-            (row as any)[key] = data[key];
+        const rowDataObj = row.toObject();
+        if (rowDataObj.id === rowData.id) {
+          // Update existing row - set all fields from data
+          Object.keys(rowData).forEach(key => {
+            (row as any)[key] = rowData[key];
           });
           await row.save();
+          console.log('Updated existing row with id:', rowData.id);
           found = true;
           break;
         }
@@ -27,11 +37,13 @@ export async function POST(req: Request) {
       
       // If not found, create new row
       if (!found) {
-        await sheet.addRow(data);
+        console.log('Creating new row:', rowData);
+        await sheet.addRow(rowData);
       }
     } else {
       // No ID, add as new row
-      await sheet.addRow(data);
+      console.log('Creating new row (no ID):', rowData);
+      await sheet.addRow(rowData);
     }
     
     return new Response(JSON.stringify({ success: true, timestamp: new Date().toISOString() }), {
@@ -45,7 +57,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('Error updating sheet:', error);
-    return new Response(JSON.stringify({ error: 'Failed to update sheet' }), {
+    return new Response(JSON.stringify({ error: 'Failed to update sheet', details: String(error) }), {
       status: 500,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
