@@ -202,8 +202,8 @@ export function Login() {
               </Button>
 
               <div className="text-center text-sm">
-                <button
-                  type="button"
+                <a
+                  href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     setIsRegistering(!isRegistering);
@@ -213,7 +213,7 @@ export function Login() {
                   className="text-emerald-600 hover:underline"
                 >
                   {isRegistering ? "Already have an account? Sign in" : "Need an account? Sign up"}
-                </button>
+                </a>
               </div>
 
               {msg && (
