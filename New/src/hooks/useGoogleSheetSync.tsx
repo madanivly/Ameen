@@ -24,7 +24,7 @@ export function useGoogleSheetSync({
     try {
       // Add cache-busting query parameter
       const timestamp = Date.now();
-      const response = await fetch(`/api/fetch-data?t=${timestamp}`, {
+      const response = await fetch(`/api/get-data?t=${timestamp}`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
