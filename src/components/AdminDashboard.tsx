@@ -791,49 +791,53 @@ export function AdminDashboard() {
         </Card>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="p-5">
-          <h2 className="mb-3 font-semibold text-slate-900">Recent Receipts</h2>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Receipt</TableHead>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentReceipts.map((t: any) => {
-                  const m = state.members.find((x) => x.id === t.memberId);
-                  const statusLabel = t.status === 'held_by_collector' 
-                    ? `Held by Collector` 
-                    : t.status === 'held_by_admin' ? 'Held by Admin' : 'Confirmed';
-                  return (
-                    <TableRow key={t.id}>
-                      <TableCell className="font-mono text-xs">
-                        {t.receiptNo}
-                      </TableCell>
-                      <TableCell>{m?.name ?? "—"}</TableCell>
-                      <TableCell>{fmtDate(t.paidAt)}</TableCell>
-                      <TableCell>
-                        <Badge variant={t.status === 'held_by_collector' ? 'secondary' : 'default'}>
-                          {statusLabel}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {fmt(t.amount)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
-      </div>
-    </AppShell>
+       <div className="grid gap-6 lg:grid-cols-2">
+         <Card className="p-5">
+           <h2 className="mb-3 font-semibold text-slate-900">Recent Receipts</h2>
+           <div className="overflow-x-auto">
+             <Table>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Receipt</TableHead>
+                   <TableHead>Member</TableHead>
+                   <TableHead>Date</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead className="text-right">Amount</TableHead>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {recentReceipts.map((t: any) => {
+                   const m = state.members.find((x) => x.id === t.memberId);
+                   const statusLabel = t.status === 'held_by_collector' 
+                     ? `Held by Collector` 
+                     : t.status === 'held_by_admin' ? 'Held by Admin' : 'Confirmed';
+                   return (
+                     <TableRow key={t.id}>
+                       <TableCell className="font-mono text-xs">
+                         {t.receiptNo}
+                       </TableCell>
+                       <TableCell>{m?.name ?? "—"}</TableCell>
+                       <TableCell>{fmtDate(t.paidAt)}</TableCell>
+                       <TableCell>
+                         <Badge variant={t.status === 'held_by_collector' ? 'secondary' : 'default'}>
+                           {statusLabel}
+                         </Badge>
+                       </TableCell>
+                       <TableCell className="text-right font-semibold">
+                         {fmt(t.amount)}
+                       </TableCell>
+                     </TableRow>
+                   );
+                 })}
+               </TableBody>
+             </Table>
+           </div>
+         </Card>
+       </div>
+
+       <div className="mt-6">
+         <PublicAnalytics />
+       </div>
+     </AppShell>
   );
 }
