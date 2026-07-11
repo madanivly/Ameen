@@ -1,19 +1,19 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-DOu_utqM.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-Bw5ynTOA.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "/Users/admin/Library/CloudStorage/GoogleDrive-madanivly@eco-speaker.com/Other computers/My MacBook Pro/Dropbox/Graphic Design/Freelance/Web Design/Ameen Fund/Ameen/src/routes/__root.tsx",
 		children: ["/"],
-		preloads: ["/assets/index-IObdBYjV.js"],
+		preloads: ["/assets/index-D4IIeZwQ.js"],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-IObdBYjV.js"
+			src: "/assets/index-D4IIeZwQ.js"
 		} }]
 	},
 	"/": {
 		filePath: "/Users/admin/Library/CloudStorage/GoogleDrive-madanivly@eco-speaker.com/Other computers/My MacBook Pro/Dropbox/Graphic Design/Freelance/Web Design/Ameen Fund/Ameen/src/routes/index.tsx",
 		children: void 0,
-		preloads: ["/assets/routes-CInsYo2e.js"]
+		preloads: ["/assets/routes-Bo5i6S_9.js"]
 	}
 } });
 //#endregion

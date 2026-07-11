@@ -5,40 +5,134 @@ import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 import { t as Root } from "../_libs/radix-ui__react-label.mjs";
 import { a as TrendingUp, c as LogOut, d as ChevronDown, f as Briefcase, i as TriangleAlert, l as Coins, n as Wrench, o as Trash2, r as Wallet, s as ShieldCheck, t as X, u as ChevronUp } from "../_libs/lucide-react.mjs";
 import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-VhcMdXAz.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-UjQ-CGi3.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-function useGoogleSheetSync({ enabled = true, pollInterval = 5e3, onDataUpdate, onError }) {
+var MAX_RETRIES = 3;
+var ACTIVE_POLL_INTERVAL = 2e3;
+var IDLE_POLL_INTERVAL = 15e3;
+function useGoogleSheetSync({ enabled = true, pollInterval = ACTIVE_POLL_INTERVAL, onDataUpdate, onError, onConnectionStatusChange }) {
 	const intervalRef = (0, import_react.useRef)(null);
 	const lastFetchTimeRef = (0, import_react.useRef)(0);
 	const isActiveRef = (0, import_react.useRef)(false);
+	const retryCountRef = (0, import_react.useRef)(0);
+	const etagRef = (0, import_react.useRef)(null);
+	const currentPollIntervalRef = (0, import_react.useRef)(pollInterval);
+	const visibilityChangeCountRef = (0, import_react.useRef)(0);
+	const [connectionStatus, setConnectionStatus] = (0, import_react.useState)("idle");
+	const userActivityTimerRef = (0, import_react.useRef)(null);
+	const isUserActiveRef = (0, import_react.useRef)(true);
+	const updateConnectionStatus = (0, import_react.useCallback)((status) => {
+		setConnectionStatus(status);
+		onConnectionStatusChange?.(status);
+	}, [onConnectionStatusChange]);
 	const fetchData = (0, import_react.useCallback)(async () => {
 		if (!isActiveRef.current) return;
 		try {
+			updateConnectionStatus("connecting");
 			const timestamp = Date.now();
+			const headers = {
+				"Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+				"Pragma": "no-cache",
+				"Expires": "0",
+				"X-Request-Time": timestamp.toString()
+			};
+			if (etagRef.current) headers["If-None-Match"] = etagRef.current;
 			const response = await fetch(`/api/fetch-data?t=${timestamp}`, {
 				method: "GET",
-				headers: {
-					"Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
-					"Pragma": "no-cache",
-					"Expires": "0",
-					"X-Request-Time": timestamp.toString()
-				}
+				headers
 			});
+			if (response.status === 304) {
+				lastFetchTimeRef.current = timestamp;
+				retryCountRef.current = 0;
+				updateConnectionStatus("connected");
+				return;
+			}
 			if (!response.ok) throw new Error(`Failed to fetch data: ${response.statusText}`);
 			const result = await response.json();
+			const responseEtag = result.etag || response.headers.get("etag");
+			if (responseEtag) etagRef.current = responseEtag;
 			lastFetchTimeRef.current = timestamp;
-			if (result.success && result.data) onDataUpdate?.(result.data);
-			else if (result.error) throw new Error(result.error);
+			retryCountRef.current = 0;
+			if (result.success && result.data) {
+				onDataUpdate?.(result.data);
+				updateConnectionStatus("connected");
+			} else if (result.error) throw new Error(result.error);
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error));
 			console.error("Google Sheets sync error:", err);
-			onError?.(err);
+			retryCountRef.current += 1;
+			if (retryCountRef.current >= MAX_RETRIES) {
+				updateConnectionStatus("error");
+				onError?.(err);
+				retryCountRef.current = 0;
+			} else console.warn(`Sync retry ${retryCountRef.current}/${MAX_RETRIES} after error:`, err.message);
 		}
-	}, [onDataUpdate, onError]);
+	}, [
+		onDataUpdate,
+		onError,
+		updateConnectionStatus
+	]);
+	(0, import_react.useEffect)(() => {
+		const handleVisibilityChange = () => {
+			visibilityChangeCountRef.current += 1;
+			if (document.hidden) {
+				isUserActiveRef.current = false;
+				if (intervalRef.current) {
+					clearInterval(intervalRef.current);
+					intervalRef.current = null;
+				}
+				intervalRef.current = setInterval(() => {
+					fetchData();
+				}, IDLE_POLL_INTERVAL);
+			} else {
+				isUserActiveRef.current = true;
+				if (intervalRef.current) {
+					clearInterval(intervalRef.current);
+					intervalRef.current = null;
+				}
+				fetchData();
+				intervalRef.current = setInterval(() => {
+					fetchData();
+				}, currentPollIntervalRef.current);
+			}
+		};
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		};
+	}, [fetchData]);
+	(0, import_react.useEffect)(() => {
+		const handleUserActivity = () => {
+			isUserActiveRef.current = true;
+			if (userActivityTimerRef.current) clearTimeout(userActivityTimerRef.current);
+			if (intervalRef.current && connectionStatus !== "error") {
+				clearInterval(intervalRef.current);
+				intervalRef.current = setInterval(() => {
+					fetchData();
+				}, currentPollIntervalRef.current);
+			}
+			userActivityTimerRef.current = setTimeout(() => {
+				isUserActiveRef.current = false;
+			}, 12e4);
+		};
+		window.addEventListener("mousemove", handleUserActivity, { passive: true });
+		window.addEventListener("keydown", handleUserActivity, { passive: true });
+		window.addEventListener("touchstart", handleUserActivity, { passive: true });
+		window.addEventListener("scroll", handleUserActivity, { passive: true });
+		return () => {
+			window.removeEventListener("mousemove", handleUserActivity);
+			window.removeEventListener("keydown", handleUserActivity);
+			window.removeEventListener("touchstart", handleUserActivity);
+			window.removeEventListener("scroll", handleUserActivity);
+			if (userActivityTimerRef.current) clearTimeout(userActivityTimerRef.current);
+		};
+	}, [fetchData, connectionStatus]);
 	const startPolling = (0, import_react.useCallback)(() => {
 		if (!enabled || intervalRef.current) return;
 		isActiveRef.current = true;
+		currentPollIntervalRef.current = pollInterval;
+		updateConnectionStatus("connecting");
 		fetchData();
 		intervalRef.current = setInterval(() => {
 			fetchData();
@@ -46,7 +140,8 @@ function useGoogleSheetSync({ enabled = true, pollInterval = 5e3, onDataUpdate, 
 	}, [
 		enabled,
 		fetchData,
-		pollInterval
+		pollInterval,
+		updateConnectionStatus
 	]);
 	const stopPolling = (0, import_react.useCallback)(() => {
 		isActiveRef.current = false;
@@ -54,8 +149,12 @@ function useGoogleSheetSync({ enabled = true, pollInterval = 5e3, onDataUpdate, 
 			clearInterval(intervalRef.current);
 			intervalRef.current = null;
 		}
-	}, []);
+		etagRef.current = null;
+		retryCountRef.current = 0;
+		updateConnectionStatus("idle");
+	}, [updateConnectionStatus]);
 	const manualRefresh = (0, import_react.useCallback)(async () => {
+		etagRef.current = null;
 		await fetchData();
 	}, [fetchData]);
 	(0, import_react.useEffect)(() => {
@@ -73,7 +172,9 @@ function useGoogleSheetSync({ enabled = true, pollInterval = 5e3, onDataUpdate, 
 		manualRefresh,
 		startPolling,
 		stopPolling,
-		lastFetchTime: lastFetchTimeRef.current
+		lastFetchTime: lastFetchTimeRef.current,
+		connectionStatus,
+		retryCount: retryCountRef.current
 	};
 }
 var STORAGE_KEY = "ameen-portal-state-v1";
@@ -114,35 +215,13 @@ function load() {
 var AppStateContext = (0, import_react.createContext)(null);
 function AppStateProvider({ children }) {
 	const [state, setState] = (0, import_react.useState)(() => load());
-	const [refreshTrigger, setRefreshTrigger] = (0, import_react.useState)(0);
-	const [isInitialized, setIsInitialized] = (0, import_react.useState)(false);
-	(0, import_react.useEffect)(() => {
-		if (typeof window === "undefined" || isInitialized) return;
-		const loadInitialData = async () => {
-			try {
-				const response = await fetch(`/api/fetch-data?t=${Date.now()}`, { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" } });
-				if (response.ok) {
-					const result = await response.json();
-					if (result.success && result.data) setState((prevState) => ({
-						currentUserId: prevState.currentUserId,
-						currentRole: prevState.currentRole,
-						...result.data
-					}));
-				}
-			} catch (err) {
-				console.error("Failed to load initial data:", err);
-			}
-			setIsInitialized(true);
-		};
-		loadInitialData();
-	}, [isInitialized]);
 	(0, import_react.useEffect)(() => {
 		if (typeof window === "undefined") return;
 		window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 	}, [state]);
-	useGoogleSheetSync({
-		enabled: typeof window !== "undefined" && isInitialized,
-		pollInterval: 1e3,
+	const { manualRefresh, connectionStatus } = useGoogleSheetSync({
+		enabled: typeof window !== "undefined",
+		pollInterval: 2e3,
 		onDataUpdate: (syncedData) => {
 			setState((prevState) => {
 				return {
@@ -301,7 +380,7 @@ function AppStateProvider({ children }) {
 				console.log("Persistence response status:", res.status);
 				return res.json().then((json) => {
 					console.log("Persistence response:", json);
-					if (res.ok) setTimeout(() => setRefreshTrigger((prev) => prev + 1), 500);
+					if (res.ok) {}
 				});
 			}).catch((err) => console.error("Failed to persist transaction:", err));
 			setState((s) => ({
@@ -334,8 +413,6 @@ function AppStateProvider({ children }) {
 						sheet: "Data",
 						...updatedTx
 					})
-				}).then(() => {
-					setTimeout(() => setRefreshTrigger((prev) => prev + 1), 300);
 				}).catch((err) => console.error("Failed to update transaction:", err));
 				return {
 					...s,
@@ -535,8 +612,6 @@ function AppStateProvider({ children }) {
 					type: "expense",
 					...newExpense
 				})
-			}).then(() => {
-				setTimeout(() => setRefreshTrigger((prev) => prev + 1), 300);
 			}).catch((err) => console.error("Failed to save expense to sheet:", err));
 			setState((s) => ({
 				...s,
@@ -551,8 +626,6 @@ function AppStateProvider({ children }) {
 					"Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
 				},
 				body: JSON.stringify({ id: expenseId })
-			}).then(() => {
-				setTimeout(() => setRefreshTrigger((prev) => prev + 1), 300);
 			}).catch((err) => console.error("Failed to delete expense from sheet:", err));
 			setState((s) => ({
 				...s,
@@ -621,7 +694,7 @@ function AppStateProvider({ children }) {
 			};
 		};
 		const triggerDataRefresh = () => {
-			setRefreshTrigger((prev) => prev + 1);
+			manualRefresh();
 		};
 		const resetSeed = () => {
 			if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY);
