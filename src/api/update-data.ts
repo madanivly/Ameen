@@ -2,18 +2,22 @@ import { getDoc } from '../lib/google-sheets';
 
 export async function POST(req: Request) {
   try {
+    console.log('[UPDATE-DATA] POST request received');
     const doc = await getDoc();
+    console.log('[UPDATE-DATA] Doc loaded');
     let sheet = doc.sheetsByTitle['Data'];
     if (!sheet) {
+      console.log('[UPDATE-DATA] Data sheet not found, creating new sheet');
       sheet = await doc.addSheet({ title: 'Data' });
     }
     
     const data = await req.json();
+    console.log('[UPDATE-DATA] Raw data received:', JSON.stringify(data));
     
     // Remove the 'sheet' field if it exists (it's not a data field)
     const { sheet: sheetName, ...rowData } = data;
     
-    console.log('Saving to sheet:', { rowData });
+    console.log('[UPDATE-DATA] Saving to sheet:', JSON.stringify(rowData));
     
     // Check if this is an update (id exists) or a new row
     if (rowData.id) {
