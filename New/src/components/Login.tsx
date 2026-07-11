@@ -8,23 +8,15 @@ import { PublicAnalytics } from "./PublicAnalytics";
 import { ShieldCheck } from "lucide-react";
 
 export function Login() {
-  const { login, state } = useAppState();
+  const { login } = useAppState();
   const [inputId, setInputId] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [collector, setCollector] = useState("");
-  const [nomineeName, setNomineeName] = useState("");
-  const [nomineeAddress, setNomineeAddress] = useState("");
-  const [nomineeContact, setNomineeContact] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-    const submit = (e: React.FormEvent) => {
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const r = login(isRegistering ? name : inputId, password, mobile, whatsapp, collector, nomineeName, nomineeAddress, nomineeContact);
+    const r = login(inputId, password, "", "", "", "", "", "");
     if (r.ok) {
       setMsg(r.message);
       setErr(null);
@@ -71,14 +63,13 @@ export function Login() {
         <section>
           <Card className="border-emerald-100 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">
-              {isRegistering ? "SIGN IN TO JOIN" : "Sign in"}
+              Sign in
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Enter your ID and Password.
             </p>
 
             <form onSubmit={submit} className="mt-5 space-y-4">
-              {!isRegistering && (
                 <div>
                   <Label htmlFor="inputId">Member ID</Label>
                   <Input
@@ -90,8 +81,6 @@ export function Login() {
                     required
                   />
                 </div>
-              )}
-              {!isRegistering && (
                 <div>
                   <Label htmlFor="password">Password</Label>
                   <Input
@@ -103,101 +92,12 @@ export function Login() {
                     required
                   />
                 </div>
-              )}
-              {isRegistering && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="password">Password (for new account)</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="********"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="name">Full name</Label>
-                    <Input
-                      id="name"
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="mobile">Mobile Number</Label>
-                    <Input
-                      id="mobile"
-                      placeholder="+974..."
-                      value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
-                      required
-                    />
-                  </div>
-                   <div>
-                     <Label htmlFor="whatsapp">WhatsApp Number</Label>
-                     <Input
-                       id="whatsapp"
-                       placeholder="+974..."
-                       value={whatsapp}
-                       onChange={(e) => setWhatsapp(e.target.value)}
-                       required
-                     />
-                   </div>
-                   <div className="border-t pt-4 mt-4">
-                     <h3 className="font-semibold text-slate-900 mb-3">Nominee Information</h3>
-                     <div>
-                       <Label htmlFor="nomineeName">Nominee Full Name</Label>
-                       <Input
-                         id="nomineeName"
-                         placeholder="Nominee Name"
-                         value={nomineeName}
-                         onChange={(e) => setNomineeName(e.target.value)}
-                         required
-                       />
-                     </div>
-                     <div className="mt-3">
-                       <Label htmlFor="nomineeAddress">Nominee Address</Label>
-                       <Input
-                         id="nomineeAddress"
-                         placeholder="Nominee Address"
-                         value={nomineeAddress}
-                         onChange={(e) => setNomineeAddress(e.target.value)}
-                         required
-                       />
-                     </div>
-                     <div className="mt-3">
-                       <Label htmlFor="nomineeContact">Nominee Contact Number</Label>
-                       <Input
-                         id="nomineeContact"
-                         placeholder="+974..."
-                         value={nomineeContact}
-                         onChange={(e) => setNomineeContact(e.target.value)}
-                         required
-                       />
-                     </div>
-                   </div>
-                 </div>
-               )}
               <Button
                 type="submit"
                 className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
               >
-                {isRegistering ? "Register" : "Sign In"}
+                Sign In
               </Button>
-              <div className="text-center text-sm">
-                <button
-                  type="button"
-                  onClick={() => setIsRegistering(!isRegistering)}
-                  className="text-emerald-600 hover:underline"
-                >
-                  {isRegistering ? "Already have an account? Sign in" : "Need an account? Sign up"}
-                </button>
-              </div>
-
               {msg && (
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
                   {msg}
@@ -211,7 +111,7 @@ export function Login() {
             </form>
 
             <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              <strong>Demo:</strong> Use your actual registered Member ID and password.
+              <strong>Demo:</strong> Try ACF-XXXX (member) or adm_ali (admin). Or use the dev switcher in the corner.
             </div>
           </Card>
         </section>
