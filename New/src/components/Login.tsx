@@ -111,7 +111,7 @@ export function Login() {
             </form>
 
             <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-              <strong>Demo:</strong> Try ACF-XXXX (member) or adm_ali (admin). Or use the dev switcher in the corner.
+              <strong>Demo:</strong> Use user ID and Password provided.
             </div>
           </Card>
         </section>
