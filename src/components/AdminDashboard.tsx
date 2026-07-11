@@ -269,7 +269,7 @@ export function AdminDashboard() {
 
   return (
     <AppShell
-      title={`${a.name} · Admin Console`}
+      title={`${a.name} · ${a.role === 'admin' ? 'Admin' : 'Collector'} Console`}
       subtitle="Log received payments, review your ledger, and transfer to the Core Treasurer."
     >
       {(a.role === "admin" || a.role === "collector") && (
