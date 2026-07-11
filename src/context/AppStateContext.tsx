@@ -277,6 +277,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         ...tx,
         type: 'transaction',
       };
+      console.log('Persisting transaction to Google Sheets:', txData);
       fetch('/api/update-data', {
         method: 'POST',
         headers: {
@@ -284,9 +285,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         },
         body: JSON.stringify(txData),
-      }).then(() => {
-        // Trigger immediate refresh after successful update
-        setTimeout(() => setRefreshTrigger(prev => prev + 1), 500);
+      }).then(res => {
+        console.log('Persistence response status:', res.status);
+        return res.json().then(json => {
+          console.log('Persistence response:', json);
+          if (res.ok) {
+            // Trigger immediate refresh after successful update
+            setTimeout(() => setRefreshTrigger(prev => prev + 1), 500);
+          }
+        });
       }).catch(err => console.error('Failed to persist transaction:', err));
 
       setState((s) => ({ ...s, transactions: [...s.transactions, tx] }));
