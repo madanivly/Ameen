@@ -273,17 +273,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       };
       
       // Persist to Google Sheets with cache-busting headers
+      const txData = {
+        ...tx,
+        type: 'transaction',
+      };
       fetch('/api/update-data', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         },
-        body: JSON.stringify({ sheet: 'Transactions', ...tx }),
+        body: JSON.stringify(txData),
       }).then(() => {
         // Trigger immediate refresh after successful update
         setTimeout(() => setRefreshTrigger(prev => prev + 1), 500);
-      });
+      }).catch(err => console.error('Failed to persist transaction:', err));
 
       setState((s) => ({ ...s, transactions: [...s.transactions, tx] }));
       return tx;
