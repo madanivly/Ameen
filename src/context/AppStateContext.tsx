@@ -108,6 +108,37 @@ const AppStateContext = createContext<AppStateContextValue | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => load());
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load initial data from Google Sheets on mount
+  useEffect(() => {
+    if (typeof window === "undefined" || isInitialized) return;
+    
+    const loadInitialData = async () => {
+      try {
+        const response = await fetch(`/api/fetch-data?t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setState(prevState => ({
+              currentUserId: prevState.currentUserId,
+              currentRole: prevState.currentRole,
+              ...result.data,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load initial data:', err);
+      }
+      setIsInitialized(true);
+    };
+    
+    loadInitialData();
+  }, [isInitialized]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -115,15 +146,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   // Set up polling for real-time sync with Google Sheets
-  const isClient = typeof window !== "undefined";
+  const isClient = typeof window !== "undefined" && isInitialized;
   useGoogleSheetSync({
     enabled: isClient,
-    pollInterval: 5000, // Poll every 5 seconds
+    pollInterval: 3000, // Poll every 3 seconds for faster updates
     onDataUpdate: (syncedData) => {
       setState((prevState) => {
-        // Merge synced data with local state, preferring synced data for most fields
-        // but preserving local currentUserId and currentRole
-        return {
+        // Deep merge to preserve local user session
+        const newState = {
           currentUserId: prevState.currentUserId,
           currentRole: prevState.currentRole,
           members: syncedData.members || prevState.members,
@@ -135,6 +165,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           expenses: syncedData.expenses || prevState.expenses,
           pendingSignups: syncedData.pendingSignups || prevState.pendingSignups,
         };
+        return newState;
       });
     },
     onError: (error) => {
