@@ -401,9 +401,7 @@ export function AdminDashboard() {
            ))}
          </div>
        </Card>
-      )}
-
-      <PublicAnalytics />
+       )}
 
       {a.role === 'admin' && (
         <div className="mb-4">
