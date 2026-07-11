@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getAppStateData } from "../lib/data-loader";
 import { AppStateProvider, useAppState } from "@/context/AppStateContext";
 import { Login } from "@/components/Login";
 import { MemberDashboard } from "@/components/MemberDashboard";
@@ -8,6 +9,7 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/")({
+  loader: () => getAppStateData(),
   head: () => ({
     meta: [
       { title: "Ameen Portal — Community Investment Fund" },

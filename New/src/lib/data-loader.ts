@@ -1,33 +1,22 @@
 import { getDoc } from '../lib/google-sheets';
 import type { AppState, Transaction, User, Admin, Investment, MemberInvestmentStake, TreasurerTransfer, Expense } from '../types';
 
-export async function GET() {
+export async function getAppStateData(): Promise<Partial<AppState>> {
   try {
     const doc = await getDoc();
     const dataSheet = doc.sheetsByTitle['Data'];
     
     if (!dataSheet) {
-      // No data yet, return empty state
-      return new Response(JSON.stringify({
-        success: true,
-        data: {
+      return {
           members: [],
           admins: [],
           transactions: [],
           investments: [],
           stakes: [],
           transfers: [],
+          expenses: [],
           pendingSignups: [],
-        }
-      }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        }
-      });
+        };
     }
 
     const rows = await dataSheet.getRows();
@@ -128,7 +117,7 @@ export async function GET() {
       }
     }
 
-    const responseData: Partial<AppState> = {
+    return {
       members,
       admins,
       transactions,
@@ -138,27 +127,17 @@ export async function GET() {
       expenses,
       pendingSignups: [],
     };
-
-    return new Response(JSON.stringify({
-      success: true,
-      data: responseData,
-      timestamp: new Date().toISOString(),
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      }
-    });
   } catch (error) {
     console.error('Error fetching data from Google Sheets:', error);
-    return new Response(JSON.stringify({ error: 'Failed to fetch data from sheet' }), {
-      status: 500,
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-      }
-    });
+    return {
+        members: [],
+        admins: [],
+        transactions: [],
+        investments: [],
+        stakes: [],
+        transfers: [],
+        expenses: [],
+        pendingSignups: [],
+    };
   }
 }
