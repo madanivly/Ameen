@@ -107,6 +107,17 @@ export function Login() {
               {isRegistering && (
                 <div className="space-y-4">
                   <div>
+                    <Label htmlFor="password">Password (for new account)</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="********"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="name">Full name</Label>
                     <Input
                       id="name"
