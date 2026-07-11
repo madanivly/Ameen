@@ -5,7 +5,35 @@ export async function POST(req: Request) {
     const doc = await getDoc();
     const sheet = doc.sheetsByTitle['Data'] || (await doc.addSheet({ title: 'Data' }));
     const data = await req.json();
-    await sheet.addRow(data);
+    
+    // Check if this is an update (id exists) or a new row
+    if (data.id) {
+      const rows = await sheet.getRows();
+      let found = false;
+      
+      // Try to find and update existing row
+      for (const row of rows) {
+        const rowData = row.toObject();
+        if (rowData.id === data.id) {
+          // Update existing row
+          Object.keys(data).forEach(key => {
+            (row as any)[key] = data[key];
+          });
+          await row.save();
+          found = true;
+          break;
+        }
+      }
+      
+      // If not found, create new row
+      if (!found) {
+        await sheet.addRow(data);
+      }
+    } else {
+      // No ID, add as new row
+      await sheet.addRow(data);
+    }
+    
     return new Response(JSON.stringify({ success: true, timestamp: new Date().toISOString() }), {
       status: 200,
       headers: {
