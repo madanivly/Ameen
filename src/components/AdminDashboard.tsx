@@ -361,6 +361,48 @@ export function AdminDashboard() {
         </Card>
       )}
 
+      {a.role === 'admin' && (
+        <Card className="p-5 mb-6">
+          <div className="mb-4 text-xs font-semibold uppercase text-blue-800">Admin: Manage Collectors</div>
+          <div className="mb-4">
+            <Label>Promote Member to Collector</Label>
+            <select
+                className="w-full rounded-md border p-2"
+                onChange={(e) => {
+                    const memberId = e.target.value;
+                    if (memberId) {
+                        const m = state.members.find(x => x.id === memberId);
+                        const alreadyCollector = state.admins.find(a => a.name === m?.name && a.role === 'collector');
+                        if (m) {
+                            if (alreadyCollector) {
+                                toast.error(`${m.name} is already a collector`);
+                            } else {
+                                addCollector({ name: m.name, mobile: m.mobile, whatsapp: m.whatsapp });
+                                toast.success(`Promoted ${m.name} to collector`);
+                            }
+                        }
+                        e.target.value = '';
+                    }
+                }}
+            >
+                <option value="">Select a member to promote...</option>
+                {state.members.filter(m => !state.admins.some(a => a.name === m.name && a.role === 'collector')).map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+            </select>
+          </div>
+         
+         <div className="flex flex-wrap gap-2">
+           {state.admins.filter(admin => admin.role === 'collector').map(c => (
+             <div key={c.id} className="flex gap-1">
+                 <Button variant="secondary">{c.name}</Button>
+                 <Button variant="destructive" size="sm" onClick={() => removeCollector(c.id)}>×</Button>
+             </div>
+           ))}
+         </div>
+       </Card>
+      )}
+
       <PublicAnalytics />
 
       {a.role === 'admin' && (
@@ -472,48 +514,6 @@ export function AdminDashboard() {
         </AlertDialogContent>
       </AlertDialog>
 
-       {a.role === 'admin' && (
-         <Card className="p-5 mb-6">
-           <div className="mb-4 text-xs font-semibold uppercase text-blue-800">Admin: Manage Collectors</div>
-           <div className="mb-4">
-             <Label>Promote Member to Collector</Label>
-             <select
-                 className="w-full rounded-md border p-2"
-                 onChange={(e) => {
-                     const memberId = e.target.value;
-                     if (memberId) {
-                         const m = state.members.find(x => x.id === memberId);
-                         const alreadyCollector = state.admins.find(a => a.name === m?.name && a.role === 'collector');
-                         if (m) {
-                             if (alreadyCollector) {
-                                 toast.error(`${m.name} is already a collector`);
-                             } else {
-                                 addCollector({ name: m.name, mobile: m.mobile, whatsapp: m.whatsapp });
-                                 toast.success(`Promoted ${m.name} to collector`);
-                             }
-                         }
-                         // Reset dropdown
-                         e.target.value = '';
-                     }
-                 }}
-             >
-                 <option value="">Select a member to promote...</option>
-                 {state.members.filter(m => !state.admins.some(a => a.name === m.name && a.role === 'collector')).map(m => (
-                     <option key={m.id} value={m.id}>{m.name}</option>
-                 ))}
-             </select>
-           </div>
-          
-          <div className="flex flex-wrap gap-2">
-            {state.admins.filter(admin => admin.role === 'collector').map(c => (
-              <div key={c.id} className="flex gap-1">
-                  <Button variant="secondary">{c.name}</Button>
-                  <Button variant="destructive" size="sm" onClick={() => removeCollector(c.id)}>×</Button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
 
       {a.role === 'admin' && (() => {
           const allCollectors = state.admins.filter(admin => admin.role === 'collector');
