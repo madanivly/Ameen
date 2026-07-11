@@ -1,8 +1,11 @@
+import { defineEventHandler, readBody, getMethod } from 'h3';
 import { getDoc } from '../../lib/google-sheets';
 
 export default defineEventHandler(async (event: any) => {
+  const method = getMethod(event);
+  console.log(`[UPDATE-DATA] ${method} request received`);
+  
   try {
-    console.log('[UPDATE-DATA] POST request received');
     const doc = await getDoc();
     console.log('[UPDATE-DATA] Doc loaded');
     let sheet = doc.sheetsByTitle['Data'];
@@ -10,12 +13,38 @@ export default defineEventHandler(async (event: any) => {
       console.log('[UPDATE-DATA] Data sheet not found, creating new sheet');
       sheet = await doc.addSheet({ title: 'Data' });
     }
+
+    // --- Handle DELETE ---
+    if (method === 'DELETE') {
+      const body = (await readBody(event)) as Record<string, any>;
+      console.log('[UPDATE-DATA] DELETE request body:', JSON.stringify(body));
+      const deleteId = body?.id;
+      
+      if (!deleteId) {
+        return { success: false, error: 'No id provided for deletion' };
+      }
+
+      const rows = await sheet.getRows();
+      let deleted = false;
+      for (const row of rows) {
+        const rowData = row.toObject();
+        if (rowData.id === deleteId) {
+          await row.delete();
+          console.log('[UPDATE-DATA] Deleted row with id:', deleteId);
+          deleted = true;
+          break;
+        }
+      }
+      
+      return { success: deleted, deleted: true, timestamp: new Date().toISOString() };
+    }
     
-    const data = await readBody(event);
-    console.log('[UPDATE-DATA] Raw data received:', JSON.stringify(data));
+    // --- Handle POST (create/update) ---
+    const body = (await readBody(event)) as Record<string, any>;
+    console.log('[UPDATE-DATA] Raw data received:', JSON.stringify(body));
     
     // Remove the 'sheet' field if it exists (it's not a data field)
-    const { sheet: sheetName, ...rowData } = data;
+    const { sheet: sheetName, ...rowData } = body;
     
     console.log('[UPDATE-DATA] Saving to sheet:', JSON.stringify(rowData));
     
@@ -41,7 +70,7 @@ export default defineEventHandler(async (event: any) => {
       
       // If not found, create new row
       if (!found) {
-        console.log('Creating new row:', rowData);
+        console.log('Adding new row:', rowData);
         await sheet.addRow(rowData);
       }
     } else {

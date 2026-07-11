@@ -107,53 +107,21 @@ const AppStateContext = createContext<AppStateContextValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(() => load());
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load initial data from Google Sheets on mount
-  useEffect(() => {
-    if (typeof window === "undefined" || isInitialized) return;
-    
-    const loadInitialData = async () => {
-      try {
-        const response = await fetch(`/api/fetch-data?t=${Date.now()}`, {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-          },
-        });
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            setState(prevState => ({
-              currentUserId: prevState.currentUserId,
-              currentRole: prevState.currentRole,
-              ...result.data,
-            }));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load initial data:', err);
-      }
-      setIsInitialized(true);
-    };
-    
-    loadInitialData();
-  }, [isInitialized]);
-
+  // Persist state changes to localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Set up aggressive polling for real-time sync with Google Sheets (like Supabase)
-  const isClient = typeof window !== "undefined" && isInitialized;
-  useGoogleSheetSync({
+  // Set up real-time sync with Google Sheets using the enhanced sync hook
+  const isClient = typeof window !== "undefined";
+  const { manualRefresh, connectionStatus } = useGoogleSheetSync({
     enabled: isClient,
-    pollInterval: 1000, // Poll every 1 second for near real-time updates
+    pollInterval: 2000, // 2-second polling when active; uses ETags for bandwidth efficiency
     onDataUpdate: (syncedData) => {
       setState((prevState) => {
-        // Always update - force refresh every poll cycle
-        const newState = {
+        return {
           currentUserId: prevState.currentUserId,
           currentRole: prevState.currentRole,
           members: syncedData.members ?? prevState.members,
@@ -165,7 +133,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           expenses: syncedData.expenses ?? prevState.expenses,
           pendingSignups: syncedData.pendingSignups ?? prevState.pendingSignups,
         };
-        return newState;
       });
     },
     onError: (error) => {
@@ -290,8 +257,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return res.json().then(json => {
           console.log('Persistence response:', json);
           if (res.ok) {
-            // Trigger immediate refresh after successful update
-            setTimeout(() => setRefreshTrigger(prev => prev + 1), 500);
+            // Refresh will pick up changes via the sync hook's adaptive polling
           }
         });
       }).catch(err => console.error('Failed to persist transaction:', err));
@@ -321,8 +287,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           },
           body: JSON.stringify({ sheet: 'Data', ...updatedTx }),
-        }).then(() => {
-          setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
         }).catch(err => console.error('Failed to update transaction:', err));
         
         return {
@@ -469,9 +433,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         },
         body: JSON.stringify({ sheet: 'Data', type: 'expense', ...newExpense }),
-      }).then(() => {
-        // Trigger refresh to pull updated data from Google Sheets
-        setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
       }).catch(err => console.error('Failed to save expense to sheet:', err));
       
       setState((s) => ({ ...s, expenses: [...s.expenses, newExpense] }));
@@ -489,9 +450,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           },
           body: JSON.stringify({ id: expenseId }),
-        }).then(() => {
-          // Trigger refresh
-          setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
         }).catch(err => console.error('Failed to delete expense from sheet:', err));
       }
       
@@ -553,7 +511,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
 
     const triggerDataRefresh = () => {
-      setRefreshTrigger(prev => prev + 1);
+      manualRefresh();
     };
 
     const resetSeed = () => {

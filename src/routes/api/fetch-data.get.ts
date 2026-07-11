@@ -1,5 +1,7 @@
+import { defineEventHandler, setHeader, getRequestHeader } from 'h3';
 import { getDoc } from '../../lib/google-sheets';
 import type { AppState, Transaction, User, Admin, Investment, MemberInvestmentStake, TreasurerTransfer, Expense } from '../../types';
+import crypto from 'crypto';
 
 export default defineEventHandler(async (event: any) => {
   try {
@@ -23,6 +25,8 @@ export default defineEventHandler(async (event: any) => {
 
     const rows = await dataSheet.getRows();
     
+    // Build a hash of all row data for ETag-based change detection
+    const rawDataStrings: string[] = [];
     const members: User[] = [];
     const admins: Admin[] = [];
     const transactions: Transaction[] = [];
@@ -32,6 +36,7 @@ export default defineEventHandler(async (event: any) => {
 
     for (const row of rows) {
       const data = row.toObject();
+      rawDataStrings.push(JSON.stringify(data));
 
       if (data.type === 'member' || (data.id && data.memberId && data.name && data.role === 'member')) {
         members.push({
@@ -128,10 +133,30 @@ export default defineEventHandler(async (event: any) => {
       pendingSignups: [],
     };
 
+    // Compute ETag from all raw data strings and the response data
+    rawDataStrings.push(JSON.stringify(responseData));
+    const contentHash = crypto.createHash('md5').update(rawDataStrings.join('|')).digest('hex');
+    const etag = `"${contentHash}"`;
+
+    // Check if client already has the latest data via If-None-Match
+    const clientEtag = getRequestHeader(event, 'if-none-match');
+    if (clientEtag && clientEtag === etag) {
+      // Data hasn't changed — return 304 Not Modified
+      setHeader(event, 'etag', etag);
+      setHeader(event, 'cache-control', 'no-store');
+      event.res.statusCode = 304;
+      return null;
+    }
+
+    // Set ETag header for future conditional requests
+    setHeader(event, 'etag', etag);
+    setHeader(event, 'cache-control', 'no-store');
+
     return {
       success: true,
       data: responseData,
       timestamp: new Date().toISOString(),
+      etag,
     };
   } catch (error) {
     console.error('Error fetching data from Google Sheets:', error);
