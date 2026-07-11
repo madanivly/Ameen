@@ -178,29 +178,39 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const currentAdmin = () => state.admins.find((a) => a.id === state.currentUserId) ?? null;
 
     const login = (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string) => {
-      const adminByName = state.admins.find((a) => a.name === name);
-      if (adminByName) {
-        setState((s) => ({ ...s, currentUserId: adminByName.id, currentRole: "admin" }));
-        return { ok: true, message: "Logged in as admin." };
-      }
-      
-      const member = state.members.find((m) => m.memberId === name || m.id === name);
-      if (member) {
+      // Sign-in mode: validate existing credentials
+      if (!mobile && !whatsapp && !nomineeName) {
+        // This is sign-in (no registration fields provided)
+        const adminByName = state.admins.find((a) => a.name === name);
+        if (adminByName) {
+          setState((s) => ({ ...s, currentUserId: adminByName.id, currentRole: "admin" }));
+          return { ok: true, message: "Logged in as admin." };
+        }
+        
+        const member = state.members.find((m) => m.memberId === name || m.id === name);
+        if (member) {
           if (member.password === password) {
             setState((s) => ({ ...s, currentUserId: member.id, currentRole: "member" }));
             return { ok: true, message: "Welcome back." };
-          } else return { ok: false, message: "Incorrect password." };
+          } else {
+            return { ok: false, message: "Incorrect password." };
+          }
+        }
+        
+        const adminById = state.admins.find((a) => a.id === name);
+        if (adminById && password === "admin123") {
+          setState((s) => ({ ...s, currentUserId: adminById.id, currentRole: "admin" }));
+          return { ok: true, message: "Logged in as admin." };
+        }
+        
+        return { ok: false, message: "Member ID or password is incorrect." };
       }
       
-      const adminById = state.admins.find((a) => a.id === name);
-      if (adminById && password === "admin123") {
-        setState((s) => ({ ...s, currentUserId: adminById.id, currentRole: "admin" }));
-        return { ok: true, message: "Logged in as admin." };
-      }
+      // Sign-up mode: create new member
       const namePrefix = (name || "MEM").substring(0, 3).toUpperCase();
       const nextNumber = state.members.length + 1;
       const nextId = namePrefix + String(nextNumber).padStart(3, '0');
-        const isFirstMember = state.members.length === 0;
+      const isFirstMember = state.members.length === 0;
       const newMember: User = {
         id: nextId,
         memberId: nextId,
