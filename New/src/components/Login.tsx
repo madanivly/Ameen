@@ -71,10 +71,10 @@ export function Login() {
         <section>
           <Card className="border-emerald-100 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">
-              {isRegistering ? "REGISTER TO JOIN" : "SIGN IN TO JOIN"}
+              {isRegistering ? "SIGN IN TO JOIN" : "Sign in"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              {isRegistering ? "Enter your details to create an account." : "Need an account? Sign up. Enter your ID and Password."}
+              Enter your ID and Password.
             </p>
 
             <form onSubmit={submit} className="mt-5 space-y-4">
@@ -183,7 +183,7 @@ export function Login() {
                   onClick={() => setIsRegistering(!isRegistering)}
                   className="text-emerald-600 hover:underline"
                 >
-                  {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
+                  {isRegistering ? "Already have an account? Sign in" : "Need an account? Sign up"}
                 </button>
               </div>
 
