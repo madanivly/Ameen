@@ -212,8 +212,8 @@ export function Login() {
 
             <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
               <strong>Demo tips:</strong> try{" "}
-              <code className="font-mono">202601</code> (member) or{" "}
-              <code className="font-mono">adm_ali</code> (admin). Or use
+              <code className="font-mono">MEM001</code> (member) or{" "}
+              <code className="font-mono">ADM_ALI</code> (admin). Or use
               the dev switcher in the corner.
             </div>
           </Card>
