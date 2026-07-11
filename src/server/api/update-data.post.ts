@@ -53,10 +53,10 @@ export default defineEventHandler(async (event: any) => {
     return { success: true, timestamp: new Date().toISOString() };
   } catch (error) {
     console.error('Error updating sheet:', error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to update sheet',
-      data: { details: String(error) }
-    });
+    return {
+      success: false,
+      error: 'Failed to update sheet',
+      details: String(error)
+    };
   }
 });
