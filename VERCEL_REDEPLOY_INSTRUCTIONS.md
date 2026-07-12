@@ -25,7 +25,7 @@ If any are missing, add them now. Click **Save**.
 
 ## Step 4: Redeploy
 1. Click **Deployments** (breadcrumb or left sidebar)
-2. Find the latest deployment (should be from a few minutes ago)
+2. Find the latest deployment (should be from a few minutes ago - commit `a65ac1e`)
 3. Click the **...** (three dots) menu on that deployment
 4. Click **Redeploy**
 5. Wait for deployment to complete (usually 2-3 minutes)
@@ -38,12 +38,13 @@ If any are missing, add them now. Click **Save**.
 5. Open the app in another browser/incognito window - you should see the payment appear automatically
 
 ## What Was Deployed
-- Latest code from commit `a0016e2`
-- Nitro API handlers for `/api/fetch-data` and `/api/update-data`
+- Latest code from commit `a65ac1e`
+- Nitro API handlers for `/api/fetch-data`, `/api/update-data`, and `/api/batch-update`
 - 1-second polling for real-time sync
 - Automatic cross-browser synchronization
+- Fixed Vercel 500 error by restoring `src/routes/api/` files
 
-## If It Still Shows 404
+## If It Still Shows 404 or 500
 1. Check that the deployment completed successfully
 2. Hard refresh the browser (Cmd+Shift+R on Mac, Ctrl+Shift+R on Windows)
 3. Check the Network tab in DevTools - fetch requests should return data, not 404
