@@ -30,26 +30,16 @@ export const monthKey = (d: Date) =>
 const rid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 
 function seed(): AppState {
-   const admins: Admin[] = [];
-
-   const members: User[] = [];
-
-   const investments: Investment[] = [];
-   const stakes: MemberInvestmentStake[] = [];
-   const transactions: Transaction[] = [];
-   const transfers: TreasurerTransfer[] = [];
-   const expenses: Expense[] = [];
-
    return {
      currentUserId: null,
      currentRole: "member",
-     members,
-     admins,
-     transactions,
-     investments,
-     stakes,
-     transfers,
-     expenses,
+     members: [],
+     admins: [],
+     transactions: [],
+     investments: [],
+     stakes: [],
+     transfers: [],
+     expenses: [],
      pendingSignups: [],
    };
 }
@@ -116,8 +106,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   // Set up real-time sync with Google Sheets using the enhanced sync hook
-  const isClient = typeof window !== "undefined";
-  const { manualRefresh, connectionStatus } = useGoogleSheetSync({
+  const { manualRefresh } = useGoogleSheetSync({
     enabled: true, // Enabled automatic polling to ensure data is synced on load
     pollInterval: 300000, // 300-second polling when active; uses ETags for bandwidth efficiency
     onDataUpdate: (syncedData) => {
