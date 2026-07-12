@@ -20,6 +20,8 @@ export function Login() {
   const [nomineeName, setNomineeName] = useState("");
   const [nomineeAddress, setNomineeAddress] = useState("");
   const [nomineeContact, setNomineeContact] = useState("");
+  const [city, setCity] = useState("");
+  const [occupation, setOccupation] = useState("");
   
   const [isRegistering, setIsRegistering] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -35,7 +37,9 @@ export function Login() {
       collector,
       nomineeName,
       nomineeAddress,
-      nomineeContact
+      nomineeContact,
+      city,
+      occupation
     );
     if (r.ok) {
       setMsg(r.message);
@@ -83,7 +87,7 @@ export function Login() {
         <section>
           <Card className="border-emerald-100 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">
-              {isRegistering ? "SIGN UP TO JOIN" : "Sign in"}
+              {isRegistering ? "SIGN UP TO JOIN" : "SIGN IN"}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               {isRegistering ? "Register for a new account." : "Enter your ID and Password."}
@@ -158,6 +162,26 @@ export function Login() {
                       required
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="city">City/Area</Label>
+                    <Input
+                      id="city"
+                      placeholder="Doha"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="occupation">Occupation</Label>
+                    <Input
+                      id="occupation"
+                      placeholder="Software Engineer"
+                      value={occupation}
+                      onChange={(e) => setOccupation(e.target.value)}
+                      required
+                    />
+                  </div>
                   <div className="border-t pt-4 mt-4">
                     <h3 className="font-semibold text-slate-900 mb-3">Nominee Information</h3>
                     <div>
@@ -202,18 +226,14 @@ export function Login() {
               </Button>
 
               <div className="text-center text-sm">
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setIsRegistering(!isRegistering);
-                    setMsg(null);
-                    setErr(null);
-                  }}
-                  className="text-emerald-600 hover:underline"
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-emerald-600"
+                  onClick={() => setIsRegistering(!isRegistering)}
                 >
                   {isRegistering ? "Already have an account? Sign in" : "Need an account? Sign up"}
-                </a>
+                </Button>
               </div>
 
               {msg && (

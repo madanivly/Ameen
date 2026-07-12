@@ -21,7 +21,8 @@ import { useGoogleSheetSync } from "@/hooks/useGoogleSheetSync";
 
 const STORAGE_KEY = "ameen-portal-state-v1";
 
-export const FEES = { REG_FEE: 10, MONTHLY_FEE: 100 };
+export const REG_FEE = 10;
+export const MONTHLY_FEE = 100;
 
 export const monthKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -209,12 +210,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           currentRole: "admin",
         }));
       } else {
-        setState((s) => ({
-          ...s,
-          members: [...s.members, newMember],
-          currentUserId: newMember.id,
-          currentRole: "member",
-        }));
+        fetch('/api/update-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheet: 'Data', type: 'member', ...newMember }),
+        }).then(async (res) => {
+          if (res.ok) {
+            triggerDataRefresh();
+            setState((s) => ({
+              ...s,
+              members: [...s.members, newMember],
+              currentUserId: newMember.id,
+              currentRole: "member",
+            }));
+          }
+        }).catch(err => console.error('Failed to persist new member:', err));
       }
       return { ok: true, message: `Account created${isFirstMember ? " as admin" : ""} — pending 10 QR registration fee approval.` };
     };
@@ -231,7 +241,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         memberId,
         adminId,
         type,
-        amount: amount ?? FEES.MONTHLY_FEE,
+        amount: amount ?? MONTHLY_FEE,
         monthKey: mk ?? monthKey(now),
         paidAt: now.toISOString(),
         receiptNo: `R-${mk ?? monthKey(now)}-${Date.now().toString().slice(-4)}`,

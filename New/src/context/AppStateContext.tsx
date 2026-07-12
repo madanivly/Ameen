@@ -71,7 +71,7 @@ function load(): AppState {
 interface AppStateContextValue {
   state: AppState;
   setState: React.Dispatch<React.SetStateAction<AppState>>;
-  login: (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string) => { ok: boolean; message: string };
+  login: (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string, city?: string, occupation?: string) => { ok: boolean; message: string };
   logout: () => void;
   setRole: (r: Role) => void;
   currentMember: () => User | null;
@@ -114,28 +114,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Set up polling for real-time sync with Google Sheets
   const isClient = typeof window !== "undefined";
   useGoogleSheetSync({
     enabled: isClient,
-    pollInterval: 5000, // Poll every 5 seconds
+    pollInterval: 5000,
     onDataUpdate: (syncedData) => {
-      setState((prevState) => {
-        // Merge synced data with local state, preferring synced data for most fields
-        // but preserving local currentUserId and currentRole
-        return {
-          currentUserId: prevState.currentUserId,
-          currentRole: prevState.currentRole,
-          members: syncedData.members || prevState.members,
-          admins: syncedData.admins || prevState.admins,
-          transactions: syncedData.transactions || prevState.transactions,
-          investments: syncedData.investments || prevState.investments,
-          stakes: syncedData.stakes || prevState.stakes,
-          transfers: syncedData.transfers || prevState.transfers,
-          expenses: syncedData.expenses || prevState.expenses,
-          pendingSignups: syncedData.pendingSignups || prevState.pendingSignups,
-        };
-      });
+      setState((prevState) => ({
+        currentUserId: prevState.currentUserId,
+        currentRole: prevState.currentRole,
+        members: syncedData.members || prevState.members,
+        admins: syncedData.admins || prevState.admins,
+        transactions: syncedData.transactions || prevState.transactions,
+        investments: syncedData.investments || prevState.investments,
+        stakes: syncedData.stakes || prevState.stakes,
+        transfers: syncedData.transfers || prevState.transfers,
+        expenses: syncedData.expenses || prevState.expenses,
+        pendingSignups: syncedData.pendingSignups || prevState.pendingSignups,
+      }));
     },
     onError: (error) => {
       console.error("Failed to sync with Google Sheets:", error);
@@ -146,7 +141,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const currentMember = () => state.members.find((m) => m.id === state.currentUserId) ?? null;
     const currentAdmin = () => state.admins.find((a) => a.id === state.currentUserId) ?? null;
 
-    const login = (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string) => {
+    const login = (name?: string, password?: string, mobile?: string, whatsapp?: string, collector?: string, nomineeName?: string, nomineeAddress?: string, nomineeContact?: string, city?: string, occupation?: string) => {
       const adminByName = state.admins.find((a) => a.name === name);
       if (adminByName) {
         setState((s) => ({ ...s, currentUserId: adminByName.id, currentRole: "admin" }));
@@ -166,10 +161,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, currentUserId: adminById.id, currentRole: "admin" }));
         return { ok: true, message: "Logged in as admin." };
       }
+      
       const namePrefix = (name || "MEM").substring(0, 3).toUpperCase();
       const nextNumber = state.members.length + 1;
       const nextId = namePrefix + String(nextNumber).padStart(3, '0');
-        const isFirstMember = state.members.length === 0;
+      const isFirstMember = state.members.length === 0;
+      
       const newMember: User = {
         id: nextId,
         memberId: nextId,
@@ -185,14 +182,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         nomineeName: nomineeName || "",
         nomineeAddress: nomineeAddress || "",
         nomineeContact: nomineeContact || "",
+        city: city || "",
+        occupation: occupation || "",
       };
+      
       if (isFirstMember) {
         newMember.role = "admin";
         newMember.adminId = nextId;
         newMember.collectorName = name || "Member";
-      }
-      if (isFirstMember) {
-        newMember.role = "admin";
         setState((s) => ({
           ...s,
           admins: [...s.admins, { id: newMember.id, name: newMember.name, role: "admin" }],
@@ -213,7 +210,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     const logout = () => setState((s) => ({ ...s, currentUserId: null, currentRole: "member" }));
     const setRole = (r: Role) => setState((s) => ({ ...s, currentRole: r }));
-
+    
+    // ... (rest of implementation remains same as previous good state)
+    // To minimize risk, I will just provide the full implementation here:
+    
     const logPayment: AppStateContextValue["logPayment"] = ({ memberId, adminId, type, monthKey: mk, amount }) => {
       const now = new Date();
       const admin = state.admins.find(a => a.id === adminId);
@@ -231,7 +231,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         transferredToTreasurer: false,
       };
       
-      // Persist to Google Sheets with cache-busting headers
       fetch('/api/update-data', {
         method: 'POST',
         headers: {
@@ -240,7 +239,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ sheet: 'Transactions', ...tx }),
       }).then(() => {
-        // Trigger immediate refresh after successful update
         setTimeout(() => setRefreshTrigger(prev => prev + 1), 500);
       });
 
@@ -261,7 +259,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           updatedTx.transferredToTreasurer = true;
         }
         
-        // Persist to Google Sheets
         fetch('/api/update-data', {
           method: 'POST',
           headers: {
@@ -301,7 +298,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const memberToRemove = s.members.find(m => m.id === memberId);
         if (!memberToRemove) return s;
         
-        // Find and delete related admin/collector accounts from Google Sheets
         const relatedAdmins = s.admins.filter((a) => a.id === memberId || a.name === memberToRemove.name);
         relatedAdmins.forEach(admin => {
           fetch('/api/update-data', {
@@ -314,7 +310,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           }).catch(err => console.error('Failed to delete admin from sheet:', err));
         });
 
-        // Also delete the member record from Google Sheets
         fetch('/api/update-data', {
           method: 'DELETE',
           headers: {
@@ -324,9 +319,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ id: memberId, name: memberToRemove.name }),
         }).catch(err => console.error('Failed to delete member from sheet:', err));
 
-        // Remove the member and any related accounts (e.g., if they're also a collector)
-        // Also remove all transactions and stakes associated with this member
-        // If the deleted member is currently logged in, logout
         return {
           ...s,
           currentUserId: s.currentUserId === memberId ? null : s.currentUserId,
@@ -389,9 +381,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, investments: s.investments.map(i => i.id === id ? { ...i, ...investment } : i) }));
     };
 
-  const addCollector = (collector: { name: string; mobile: string; whatsapp: string }) => {
-    setState((s) => ({ ...s, admins: [...s.admins, { id: `adm_${Date.now()}`, name: collector.name, role: "collector", mobile: collector.mobile, whatsapp: collector.whatsapp }] }));
-  };
+    const addCollector = (collector: { name: string; mobile: string; whatsapp: string }) => {
+      setState((s) => ({ ...s, admins: [...s.admins, { id: `adm_${Date.now()}`, name: collector.name, role: "collector", mobile: collector.mobile, whatsapp: collector.whatsapp }] }));
+    };
 
     const removeCollector = (id: string) => {
       setState((s) => ({ ...s, admins: s.admins.filter((a) => a.id !== id) }));
@@ -409,7 +401,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         notes: expense.notes,
       };
       
-      // Persist to Google Sheets immediately
       fetch('/api/update-data', {
         method: 'POST',
         headers: {
@@ -418,7 +409,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ sheet: 'Data', type: 'expense', ...newExpense }),
       }).then(() => {
-        // Trigger refresh to pull updated data from Google Sheets
         setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
       }).catch(err => console.error('Failed to save expense to sheet:', err));
       
@@ -427,8 +417,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     const deleteExpense = (expenseId: string) => {
       const expense = state.expenses.find(e => e.id === expenseId);
-      
-      // Remove from Google Sheets
       if (expense) {
         fetch('/api/update-data', {
           method: 'DELETE',
@@ -438,7 +426,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           },
           body: JSON.stringify({ id: expenseId }),
         }).then(() => {
-          // Trigger refresh
           setTimeout(() => setRefreshTrigger(prev => prev + 1), 300);
         }).catch(err => console.error('Failed to delete expense from sheet:', err));
       }
@@ -532,7 +519,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       removeCollector,
       missedMonthsCount,
       memberMonthlyPaid,
-      memberBalance,
       memberProfitShare,
       memberActiveInvestedCapital,
       totals,
@@ -542,6 +528,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       triggerDataRefresh,
       addExpense,
       deleteExpense,
+      memberBalance,
     };
   }, [state]);
 

@@ -19,6 +19,8 @@ export interface User {
   nomineeName?: string; // Nominee full name
   nomineeAddress?: string; // Nominee address
   nomineeContact?: string; // Nominee contact number
+  city?: string; // Area
+  occupation?: string; // Occupation
 }
 
 export interface Admin {

@@ -116,11 +116,15 @@ export function useGoogleSheetSync({
         onDataUpdate?.(result.data);
         updateConnectionStatus('connected');
       } else if (result.error) {
-        throw new Error(result.error);
+        // Don't throw for expected data fetch errors, just report them
+        console.warn('Google Sheets sync returned an error:', result.error);
+        updateConnectionStatus('error');
+        return;
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      console.error('Google Sheets sync error:', err);
+      // Log for debugging but prevent crashing the app context
+      console.error('Google Sheets sync caught error:', err);
       
       retryCountRef.current += 1;
       
