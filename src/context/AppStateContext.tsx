@@ -92,6 +92,7 @@ interface AppStateContextValue {
   totals: () => { totalCollected: number; totalActiveCapital: number; totalProfit: number; balance: number };
   resetSeed: () => void;
   triggerDataRefresh: () => void;
+  clearAllSheetData: () => void;
 }
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
@@ -516,6 +517,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       setState(seed());
     };
 
+    const clearAllSheetData = () => {
+      fetch('/api/update-data', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+        body: JSON.stringify({ action: 'clear_all' }),
+      }).then(res => {
+        if (res.ok) {
+          alert('All data cleared from Google Sheet.');
+          triggerDataRefresh();
+        } else {
+          alert('Failed to clear data.');
+        }
+      }).catch(err => console.error('Failed to clear Google Sheet data:', err));
+    };
+
     return {
       state,
       setState,
@@ -549,6 +568,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       triggerDataRefresh,
       addExpense,
       deleteExpense,
+      clearAllSheetData,
     };
   }, [state]);
 

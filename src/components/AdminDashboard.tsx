@@ -50,6 +50,7 @@ export function AdminDashboard() {
     removeMember,
     addExpense,
     deleteExpense,
+    clearAllSheetData,
   } = useAppState();
 
   const a = currentAdmin();
@@ -404,9 +405,10 @@ export function AdminDashboard() {
        )}
 
       {a.role === 'admin' && (
-        <div className="mb-4">
+        <div className="mb-4 flex gap-2">
             <Button onClick={() => window.print()}>Print Member Report</Button>
             <PrintableReport state={state} />
+            <Button variant="destructive" onClick={clearAllSheetData}>Clear All Sheet Data</Button>
         </div>
       )}
       
