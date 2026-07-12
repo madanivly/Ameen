@@ -10,7 +10,7 @@ let cachedData: {
   timestamp: number;
 } | null = null;
 
-const CACHE_TTL = 10000; // 10 seconds cache
+const CACHE_TTL = 30000; // 30 seconds cache
 
 export const Route = createFileRoute('/api/fetch-data')({
   server: {
@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/fetch-data')({
             if (clientEtag && clientEtag === cachedData.etag) {
               return new Response(null, {
                 status: 304,
-                headers: { 'etag': cachedData.etag, 'cache-control': 'public, max-age=10' },
+                headers: { 'etag': cachedData.etag, 'cache-control': 'public, max-age=30' },
               });
             }
             
@@ -34,15 +34,17 @@ export const Route = createFileRoute('/api/fetch-data')({
               headers: {
                 'Content-Type': 'application/json',
                 'etag': cachedData.etag,
-                'cache-control': 'public, max-age=10',
+                'cache-control': 'public, max-age=30',
               },
             });
           }
 
           const doc = await getDoc();
+          console.log('Doc loaded, sheets:', doc.sheetCount);
           const dataSheet = doc.sheetsByTitle['Data'];
 
           if (!dataSheet) {
+            console.error('Data sheet not found');
             return new Response(JSON.stringify({
               success: true,
               data: {
@@ -204,7 +206,7 @@ export const Route = createFileRoute('/api/fetch-data')({
             headers: {
               'Content-Type': 'application/json',
               'etag': etag,
-              'cache-control': 'public, max-age=10',
+              'cache-control': 'public, max-age=30',
             },
           });
         } catch (error) {

@@ -13,8 +13,8 @@ export type ConnectionStatus = 'connected' | 'connecting' | 'error' | 'idle';
 
 const MAX_RETRIES = 5;
 const BASE_BACKOFF_MS = 2000;
-const ACTIVE_POLL_INTERVAL = 5000;  // Increased to 5s to reduce quota usage
-const IDLE_POLL_INTERVAL = 30000;   // Increased to 30s when tab is idle
+const ACTIVE_POLL_INTERVAL = 60000;  // Increased to 60s to reduce quota usage
+const IDLE_POLL_INTERVAL = 300000;   // Increased to 300s when tab is idle
 
 export function useGoogleSheetSync({
   enabled = true,
