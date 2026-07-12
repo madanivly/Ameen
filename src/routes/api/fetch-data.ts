@@ -3,11 +3,42 @@ import { getDoc } from '../../lib/google-sheets'
 import type { AppState, User, Admin, Transaction, Investment, MemberInvestmentStake, TreasurerTransfer, Expense } from '../../types'
 import crypto from 'crypto'
 
+// Simple in-memory cache to prevent hitting Google Sheets API quota
+let cachedData: {
+  response: any;
+  etag: string;
+  timestamp: number;
+} | null = null;
+
+const CACHE_TTL = 10000; // 10 seconds cache
+
 export const Route = createFileRoute('/api/fetch-data')({
   server: {
     handlers: {
       GET: async ({ request }) => {
         try {
+          const now = Date.now();
+          
+          // Check cache first
+          if (cachedData && (now - cachedData.timestamp < CACHE_TTL)) {
+            const clientEtag = request.headers.get('if-none-match');
+            if (clientEtag && clientEtag === cachedData.etag) {
+              return new Response(null, {
+                status: 304,
+                headers: { 'etag': cachedData.etag, 'cache-control': 'public, max-age=10' },
+              });
+            }
+            
+            return new Response(JSON.stringify(cachedData.response), {
+              status: 200,
+              headers: {
+                'Content-Type': 'application/json',
+                'etag': cachedData.etag,
+                'cache-control': 'public, max-age=10',
+              },
+            });
+          }
+
           const doc = await getDoc();
           const dataSheet = doc.sheetsByTitle['Data'];
 
@@ -154,17 +185,26 @@ export const Route = createFileRoute('/api/fetch-data')({
             });
           }
 
-          return new Response(JSON.stringify({
+          const finalResponse = {
             success: true,
             data: responseData,
             timestamp: new Date().toISOString(),
             etag,
-          }), {
+          };
+
+          // Update cache
+          cachedData = {
+            response: finalResponse,
+            etag,
+            timestamp: now,
+          };
+
+          return new Response(JSON.stringify(finalResponse), {
             status: 200,
             headers: {
               'Content-Type': 'application/json',
               'etag': etag,
-              'cache-control': 'no-store',
+              'cache-control': 'public, max-age=10',
             },
           });
         } catch (error) {

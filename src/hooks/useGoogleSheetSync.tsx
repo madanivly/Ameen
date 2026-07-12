@@ -11,10 +11,10 @@ export interface UseGoogleSheetSyncOptions {
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'error' | 'idle';
 
-const MAX_RETRIES = 3;
-const BASE_BACKOFF_MS = 1000;
-const ACTIVE_POLL_INTERVAL = 2000;  // 2s when user is active
-const IDLE_POLL_INTERVAL = 15000;   // 15s when tab is idle
+const MAX_RETRIES = 5;
+const BASE_BACKOFF_MS = 2000;
+const ACTIVE_POLL_INTERVAL = 5000;  // Increased to 5s to reduce quota usage
+const IDLE_POLL_INTERVAL = 30000;   // Increased to 30s when tab is idle
 
 export function useGoogleSheetSync({
   enabled = true,
@@ -76,6 +76,28 @@ export function useGoogleSheetSync({
       }
 
       if (!response.ok) {
+        if (response.status === 429) {
+          // Handle rate limiting with exponential backoff
+          const backoff = Math.min(BASE_BACKOFF_MS * Math.pow(2, retryCountRef.current), 60000);
+          console.warn(`Rate limited (429). Retrying in ${backoff}ms...`);
+          
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          
+          setTimeout(() => {
+            if (isActiveRef.current) {
+              fetchData();
+              // Resume normal polling after retry
+              intervalRef.current = setInterval(() => {
+                fetchData();
+              }, isUserActiveRef.current ? currentPollIntervalRef.current : IDLE_POLL_INTERVAL);
+            }
+          }, backoff);
+          
+          throw new Error('Rate limited by server');
+        }
         throw new Error(`Failed to fetch data: ${response.statusText}`);
       }
 
