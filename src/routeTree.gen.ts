@@ -10,33 +10,68 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiUpdateDataRouteImport } from './routes/api/update-data'
+import { Route as ApiFetchDataRouteImport } from './routes/api/fetch-data'
+import { Route as ApiBatchUpdateRouteImport } from './routes/api/batch-update'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUpdateDataRoute = ApiUpdateDataRouteImport.update({
+  id: '/api/update-data',
+  path: '/api/update-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFetchDataRoute = ApiFetchDataRouteImport.update({
+  id: '/api/fetch-data',
+  path: '/api/fetch-data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBatchUpdateRoute = ApiBatchUpdateRouteImport.update({
+  id: '/api/batch-update',
+  path: '/api/batch-update',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/batch-update': typeof ApiBatchUpdateRoute
+  '/api/fetch-data': typeof ApiFetchDataRoute
+  '/api/update-data': typeof ApiUpdateDataRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/batch-update': typeof ApiBatchUpdateRoute
+  '/api/fetch-data': typeof ApiFetchDataRoute
+  '/api/update-data': typeof ApiUpdateDataRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/batch-update': typeof ApiBatchUpdateRoute
+  '/api/fetch-data': typeof ApiFetchDataRoute
+  '/api/update-data': typeof ApiUpdateDataRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/batch-update' | '/api/fetch-data' | '/api/update-data'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/batch-update' | '/api/fetch-data' | '/api/update-data'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/batch-update'
+    | '/api/fetch-data'
+    | '/api/update-data'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiBatchUpdateRoute: typeof ApiBatchUpdateRoute
+  ApiFetchDataRoute: typeof ApiFetchDataRoute
+  ApiUpdateDataRoute: typeof ApiUpdateDataRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +83,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/update-data': {
+      id: '/api/update-data'
+      path: '/api/update-data'
+      fullPath: '/api/update-data'
+      preLoaderRoute: typeof ApiUpdateDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fetch-data': {
+      id: '/api/fetch-data'
+      path: '/api/fetch-data'
+      fullPath: '/api/fetch-data'
+      preLoaderRoute: typeof ApiFetchDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/batch-update': {
+      id: '/api/batch-update'
+      path: '/api/batch-update'
+      fullPath: '/api/batch-update'
+      preLoaderRoute: typeof ApiBatchUpdateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiBatchUpdateRoute: ApiBatchUpdateRoute,
+  ApiFetchDataRoute: ApiFetchDataRoute,
+  ApiUpdateDataRoute: ApiUpdateDataRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
