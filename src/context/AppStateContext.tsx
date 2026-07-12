@@ -516,6 +516,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const resetSeed = () => {
       if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY);
       setState(seed());
+      
+      // Clear all data from Google Sheets 'Data' sheet
+      fetch('/api/update-data', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+        body: JSON.stringify({ action: 'clear_all' }),
+      }).catch(err => console.error('Failed to clear Google Sheet data:', err));
     };
 
     return {
