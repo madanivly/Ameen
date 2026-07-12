@@ -10,7 +10,7 @@ let cachedData: {
   timestamp: number;
 } | null = null;
 
-const CACHE_TTL = 30000; // 30 seconds cache
+const CACHE_TTL = 600000; // 600 seconds cache
 
 export const Route = createFileRoute('/api/fetch-data')({
   server: {

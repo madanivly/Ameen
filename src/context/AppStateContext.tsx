@@ -118,8 +118,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   // Set up real-time sync with Google Sheets using the enhanced sync hook
   const isClient = typeof window !== "undefined";
   const { manualRefresh, connectionStatus } = useGoogleSheetSync({
-    enabled: isClient,
-    pollInterval: 2000, // 2-second polling when active; uses ETags for bandwidth efficiency
+    enabled: false, // Disabled automatic polling to prevent frequent refreshes
+    pollInterval: 300000, // 300-second polling when active; uses ETags for bandwidth efficiency
     onDataUpdate: (syncedData) => {
       setState((prevState) => {
         return {
