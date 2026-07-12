@@ -107,23 +107,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Set up real-time sync with Google Sheets using the enhanced sync hook
   const { manualRefresh } = useGoogleSheetSync({
-    enabled: true, // Enabled automatic polling to ensure data is synced on load
+    enabled: false, // Disabled automatic polling to stop constant refreshing
     pollInterval: 300000, // 300-second polling when active; uses ETags for bandwidth efficiency
     onDataUpdate: (syncedData) => {
-      setState((prevState) => {
-        return {
-          currentUserId: prevState.currentUserId,
-          currentRole: prevState.currentRole,
-          members: syncedData.members ?? prevState.members,
-          admins: syncedData.admins ?? prevState.admins,
-          transactions: syncedData.transactions ?? prevState.transactions,
-          investments: syncedData.investments ?? prevState.investments,
-          stakes: syncedData.stakes ?? prevState.stakes,
-          transfers: syncedData.transfers ?? prevState.transfers,
-          expenses: syncedData.expenses ?? prevState.expenses,
-          pendingSignups: syncedData.pendingSignups ?? prevState.pendingSignups,
-        };
-      });
+      setState((prevState) => ({
+        currentUserId: prevState.currentUserId,
+        currentRole: prevState.currentRole,
+        members: syncedData.members ?? prevState.members,
+        admins: syncedData.admins ?? prevState.admins,
+        transactions: syncedData.transactions ?? prevState.transactions,
+        investments: syncedData.investments ?? prevState.investments,
+        stakes: syncedData.stakes ?? prevState.stakes,
+        transfers: syncedData.transfers ?? prevState.transfers,
+        expenses: syncedData.expenses ?? prevState.expenses,
+        pendingSignups: syncedData.pendingSignups ?? prevState.pendingSignups,
+      }));
     },
     onError: (error) => {
       console.error("Failed to sync with Google Sheets:", error);
