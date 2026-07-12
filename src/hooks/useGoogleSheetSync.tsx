@@ -62,7 +62,7 @@ export function useGoogleSheetSync({
         headers['If-None-Match'] = etagRef.current;
       }
 
-      const response = await fetch(`/api/fetch-data?t=${timestamp}`, {
+      const response = await fetch(`/api/fetch-data?t=${timestamp}&cacheBust=${Math.random()}`, {
         method: 'GET',
         headers,
       });
