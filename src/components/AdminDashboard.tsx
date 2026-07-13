@@ -51,6 +51,7 @@ export function AdminDashboard() {
     addExpense,
     deleteExpense,
     clearAllSheetData,
+    refreshData,
   } = useAppState();
 
   const a = currentAdmin();
@@ -408,6 +409,7 @@ export function AdminDashboard() {
         <div className="mb-4 flex gap-2">
             <Button onClick={() => window.print()}>Print Member Report</Button>
             <PrintableReport state={state} />
+            <Button variant="outline" onClick={refreshData}>Refresh Data</Button>
             <Button variant="destructive" onClick={clearAllSheetData}>Clear All Sheet Data</Button>
         </div>
       )}

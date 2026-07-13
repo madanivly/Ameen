@@ -92,6 +92,7 @@ interface AppStateContextValue {
   totals: () => { totalCollected: number; totalActiveCapital: number; totalProfit: number; balance: number };
   resetSeed: () => void;
   triggerDataRefresh: () => void;
+  refreshData: () => void;
   clearAllSheetData: () => void;
 }
 
@@ -513,6 +514,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       manualRefresh();
     };
 
+    const refreshData = () => {
+      manualRefresh();
+    };
+
     const resetSeed = () => {
       if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY);
       setState(seed());
@@ -567,6 +572,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       approvePayment,
       rejectPayment,
       triggerDataRefresh,
+      refreshData,
       addExpense,
       deleteExpense,
       clearAllSheetData,

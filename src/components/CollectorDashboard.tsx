@@ -24,6 +24,7 @@ export function CollectorDashboard() {
     logPayment,
     approvePayment,
     rejectPayment,
+    refreshData,
   } = useAppState();
 
   const a = currentAdmin();
@@ -56,6 +57,9 @@ export function CollectorDashboard() {
         title={`${a.name} · Collector Portal`}
         subtitle="Manage your assigned members and approve pending payments."
       >
+        <div className="mb-4">
+            <Button variant="outline" onClick={refreshData}>Refresh Data</Button>
+        </div>
         <Card className="p-5 mb-6">
             <h2 className="mb-3 font-semibold text-slate-900">
             Pending Approvals
