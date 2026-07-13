@@ -34,7 +34,7 @@ function seed(): AppState {
      currentUserId: null,
      currentRole: "member",
      members: [],
-     admins: [{ id: "admin", name: "Admin", role: "admin", password: "admin" }],
+     admins: [{ id: "admin", name: "Admin", role: "admin", password: "admin", mobile: "", whatsapp: "" }],
      transactions: [],
      investments: [],
      stakes: [],
@@ -113,18 +113,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     enabled: true, // Enabled automatic polling
     pollInterval: 5000, // 5-second polling for faster sync
     onDataUpdate: (syncedData) => {
-      setState((prevState) => ({
-        currentUserId: prevState.currentUserId,
-        currentRole: prevState.currentRole,
-        members: syncedData.members ?? prevState.members,
-        admins: syncedData.admins ?? prevState.admins,
-        transactions: syncedData.transactions ?? prevState.transactions,
-        investments: syncedData.investments ?? prevState.investments,
-        stakes: syncedData.stakes ?? prevState.stakes,
-        transfers: syncedData.transfers ?? prevState.transfers,
-        expenses: syncedData.expenses ?? prevState.expenses,
-        pendingSignups: syncedData.pendingSignups ?? prevState.pendingSignups,
-      }));
+      console.log('Syncing data, synced admins:', syncedData.admins);
+      setState((prevState) => {
+        const newAdmins = [...prevState.admins.filter(a => a.id === 'admin'), ...(syncedData.admins ?? []).filter(a => a.id !== 'admin')];
+        console.log('New admin list:', newAdmins);
+        return {
+          currentUserId: prevState.currentUserId,
+          currentRole: prevState.currentRole,
+          members: syncedData.members ?? prevState.members,
+          admins: newAdmins,
+          transactions: syncedData.transactions ?? prevState.transactions,
+          investments: syncedData.investments ?? prevState.investments,
+          stakes: syncedData.stakes ?? prevState.stakes,
+          transfers: syncedData.transfers ?? prevState.transfers,
+          expenses: syncedData.expenses ?? prevState.expenses,
+          pendingSignups: syncedData.pendingSignups ?? prevState.pendingSignups,
+        };
+      });
     },
     onError: (error) => {
       console.error("Failed to sync with Google Sheets:", error);
@@ -141,6 +146,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         // This is sign-in (no registration fields provided)
         const admin = state.admins.find((a) => a.id === name || a.name === name);
         if (admin) {
+          console.log('Login attempt for admin:', admin.name, 'provided password:', password, 'actual password:', admin.password);
           if (admin.password === password) {
             setState((s) => ({ ...s, currentUserId: admin.id, currentRole: "admin" }));
             return { ok: true, message: "Logged in as admin." };

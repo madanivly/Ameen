@@ -9,36 +9,25 @@ export const Route = createFileRoute('/api/fetch-data')({
       GET: async ({ request }) => {
         try {
           const doc = await getDoc();
-          console.log('Doc loaded, sheets:', doc.sheetCount);
+          if (!doc) {
+            return new Response(JSON.stringify({
+              success: true,
+              data: { members: [], admins: [], transactions: [], investments: [], stakes: [], transfers: [], expenses: [], pendingSignups: [] }
+            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+          }
+          // console.log('Doc loaded, sheets:', doc.sheetCount);
           const dataSheet = doc.sheetsByTitle['Data'];
           const adminsSheet = doc.sheetsByTitle['Admins'];
 
-          if (!dataSheet) {
-            console.error('Data sheet not found');
-            return new Response(JSON.stringify({
-              success: true,
-              data: {
-                members: [],
-                admins: [],
-                transactions: [],
-                investments: [],
-                stakes: [],
-                transfers: [],
-                pendingSignups: [],
-              }
-            }), {
-              status: 200,
-              headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-            });
-          }
-
-          const rows = await dataSheet.getRows();
+          const rows = dataSheet ? await dataSheet.getRows() : [];
           const adminRows = adminsSheet ? await adminsSheet.getRows() : [];
 
           // Build a hash of all row data for ETag-based change detection
           const rawDataStrings: string[] = [];
           const members: User[] = [];
-          const admins: Admin[] = [];
+          const admins: Admin[] = [
+            { id: 'admin', name: 'Admin', role: 'admin', password: 'admin', mobile: '', whatsapp: '' }
+          ];
           const transactions: Transaction[] = [];
           const investments: Investment[] = [];
           const stakes: MemberInvestmentStake[] = [];
