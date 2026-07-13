@@ -203,6 +203,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sheet: 'Data', type: 'member', ...newMember }),
         }).then(async (res) => {
+          console.log('Member registration persistence response:', await res.json());
           if (res.ok) {
             triggerDataRefresh();
             setState((s) => ({
