@@ -107,10 +107,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Set up real-time sync with Google Sheets using the enhanced sync hook
+    // Set up real-time sync with Google Sheets using the enhanced sync hook
   const { manualRefresh } = useGoogleSheetSync({
     enabled: true, // Enabled automatic polling
-    pollInterval: 300000, // 300-second polling when active; uses ETags for bandwidth efficiency
+    pollInterval: 5000, // 5-second polling for faster sync
     onDataUpdate: (syncedData) => {
       setState((prevState) => ({
         currentUserId: prevState.currentUserId,
