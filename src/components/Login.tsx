@@ -8,7 +8,7 @@ import { PublicAnalytics } from "./PublicAnalytics";
 import { ShieldCheck } from "lucide-react";
 
 export function Login() {
-  const { login, state } = useAppState();
+  const { login, state, refreshData } = useAppState();
   const [inputId, setInputId] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -199,11 +199,14 @@ export function Login() {
                )}
              </form>
 
-             <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-               <strong>Sign In Instructions:</strong> Use your Member ID (e.g.,{" "}
-               <code className="font-mono">MEM001</code>) and your Password to sign in. If you don't have an account, click "Need an account? Register" to create one.
-             </div>
-          </Card>
+              <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                <strong>Sign In Instructions:</strong> Use your Member ID (e.g.,{" "}
+                <code className="font-mono">MEM001</code>) and your Password to sign in. If you don't have an account, click "Need an account? Register" to create one.
+                <div className="mt-3">
+                  <Button variant="outline" size="sm" onClick={refreshData}>Refresh Data</Button>
+                </div>
+              </div>
+            </Card>
         </section>
       </main>
     </div>
