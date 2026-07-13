@@ -1,5 +1,32 @@
+# Vercel
 .vercel
-dist
 .output
-.env
+.wrangler
+
+# Build output
+dist
 node_modules
+
+# Environment files
+.env
+.env.local
+
+# Lovable config
+.lovable/
+
+# OS files
+Icon
+
+# Duplicate/old project
+New/
+
+# Local config
+config.yaml
+sheet-headers.csv
+c.txt
+REAL_TIME_SYNC_IMPLEMENTATION.md
+REAL_TIME_SYNC_QUICK_START.md
+CREATE_VERCEL_TOKEN.md
+VERCEL_REDEPLOY_INSTRUCTIONS.md
+setup-vercel-env.sh
+sample-data.csv

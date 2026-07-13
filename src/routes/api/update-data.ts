@@ -9,7 +9,34 @@ export const Route = createFileRoute('/api/update-data')({
           const doc = await getDoc();
           const sheet = doc.sheetsByTitle['Data'] || (await doc.addSheet({ title: 'Data' }));
           const data = await request.json();
-          await sheet.addRow(data);
+          const { sheet: sheetName, ...rowData } = data as any;
+
+          // Check if a row with the same id already exists
+          if (rowData.id) {
+            const existingRows = await sheet.getRows();
+            let found = false;
+            for (const row of existingRows) {
+              const rowDataObj = row.toObject();
+              if (rowDataObj.id === rowData.id) {
+                // Update existing row
+                Object.keys(rowData).forEach(key => {
+                  (row as any)[key] = rowData[key];
+                });
+                await row.save();
+                found = true;
+                console.log(`[UPDATE-DATA] Updated existing row with id: ${rowData.id}`);
+                break;
+              }
+            }
+            if (!found) {
+              await sheet.addRow(rowData);
+              console.log(`[UPDATE-DATA] Added new row with id: ${rowData.id}`);
+            }
+          } else {
+            await sheet.addRow(rowData);
+            console.log('[UPDATE-DATA] Added new row (no id)');
+          }
+
           return new Response(JSON.stringify({ success: true, timestamp: new Date().toISOString() }), {
             status: 200,
             headers: {
