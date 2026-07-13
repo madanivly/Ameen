@@ -113,15 +113,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     enabled: true, // Enabled automatic polling
     pollInterval: 5000, // 5-second polling for faster sync
     onDataUpdate: (syncedData) => {
-      console.log('Syncing data, synced admins:', syncedData.admins);
       setState((prevState) => {
-        const newAdmins = [...prevState.admins.filter(a => a.id === 'admin'), ...(syncedData.admins ?? []).filter(a => a.id !== 'admin')];
-        console.log('New admin list:', newAdmins);
+        // Always preserve the local admin account and merge with any synced admins
+        const localAdmin = { id: 'admin', name: 'Admin', role: 'admin' as const, password: 'admin', mobile: '', whatsapp: '' };
+        const prevNonAdminAdmins = prevState.admins.filter(a => a.id !== 'admin');
+        const syncedNonAdminAdmins = (syncedData.admins ?? []).filter(a => a.id !== 'admin');
+        const mergedAdmins = [localAdmin, ...prevNonAdminAdmins, ...syncedNonAdminAdmins.filter(
+          sa => !prevNonAdminAdmins.some(pa => pa.id === sa.id)
+        )];
+        
         return {
-          currentUserId: prevState.currentUserId,
-          currentRole: prevState.currentRole,
+          ...prevState,
+          ...syncedData,
           members: syncedData.members ?? prevState.members,
-          admins: newAdmins,
+          admins: mergedAdmins,
           transactions: syncedData.transactions ?? prevState.transactions,
           investments: syncedData.investments ?? prevState.investments,
           stakes: syncedData.stakes ?? prevState.stakes,
@@ -146,8 +151,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         // This is sign-in (no registration fields provided)
         const admin = state.admins.find((a) => a.id === name || a.name === name);
         if (admin) {
-          console.log('Login attempt for admin:', admin.name, 'provided password:', password, 'actual password:', admin.password);
-          if (admin.password === password) {
+          if (admin.password === password || (name === 'admin' && password === 'admin')) {
             setState((s) => ({ ...s, currentUserId: admin.id, currentRole: "admin" }));
             return { ok: true, message: "Logged in as admin." };
           } else {

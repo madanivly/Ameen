@@ -7,6 +7,12 @@ export const Route = createFileRoute('/api/update-data')({
       POST: async ({ request }) => {
         try {
           const doc = await getDoc();
+          if (!doc) {
+            return new Response(JSON.stringify({ error: 'Google Sheets not configured' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+            });
+          }
           const sheet = doc.sheetsByTitle['Data'] || (await doc.addSheet({ title: 'Data' }));
           const data = await request.json();
           const { sheet: sheetName, ...rowData } = data as any;
@@ -57,6 +63,12 @@ export const Route = createFileRoute('/api/update-data')({
       DELETE: async ({ request }) => {
         try {
           const doc = await getDoc();
+          if (!doc) {
+            return new Response(JSON.stringify({ error: 'Google Sheets not configured' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+            });
+          }
           const sheet = doc.sheetsByTitle['Data'];
 
           if (!sheet) {

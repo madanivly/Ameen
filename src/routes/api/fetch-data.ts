@@ -1,28 +1,56 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getDoc } from '../../lib/google-sheets'
+import { getDoc, getCachedData, setCachedData } from '../../lib/google-sheets'
 import type { AppState, User, Admin, Transaction, Investment, MemberInvestmentStake, TreasurerTransfer, Expense } from '../../types'
 import crypto from 'crypto'
 
 export const Route = createFileRoute('/api/fetch-data')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: async () => {
         try {
+          console.log("[FETCH-DATA] Attempting to fetch data...");
+          const cached = getCachedData();
+          if (cached) {
+            console.log("[FETCH-DATA] Returning cached data.");
+            return new Response(JSON.stringify(cached), {
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            });
+          }
+          console.log("[FETCH-DATA] No cached data found, fetching from Google Sheets.");
+
           const doc = await getDoc();
           if (!doc) {
+            console.warn("[FETCH-DATA] Google Sheets not configured, returning empty data.");
             return new Response(JSON.stringify({
               success: true,
               data: { members: [], admins: [], transactions: [], investments: [], stakes: [], transfers: [], expenses: [], pendingSignups: [] }
-            }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }), {
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            });
           }
-          // console.log('Doc loaded, sheets:', doc.sheetCount);
-          const dataSheet = doc.sheetsByTitle['Data'];
-          const adminsSheet = doc.sheetsByTitle['Admins'];
+          console.log("[FETCH-DATA] Google Sheets document loaded.");
+          
+          const dataSheet = doc.sheetsByTitle['Data'] || (await doc.addSheet({ title: 'Data' }));
+          let adminsSheet = doc.sheetsByTitle['Admins'];
+          if (!adminsSheet) {
+            adminsSheet = await doc.addSheet({ title: 'Admins', headerValues: ['id', 'name', 'role', 'mobile', 'whatsapp', 'password'] });
+          }
+          console.log(`[FETCH-DATA] Data sheet found: ${!!dataSheet}, Admins sheet found: ${!!adminsSheet}`);
 
           const rows = dataSheet ? await dataSheet.getRows() : [];
           const adminRows = adminsSheet ? await adminsSheet.getRows() : [];
+          console.log(`[FETCH-DATA] Fetched ${rows.length} data rows and ${adminRows.length} admin rows.`);
 
-          // Build a hash of all row data for ETag-based change detection
           const rawDataStrings: string[] = [];
           const members: User[] = [];
           const admins: Admin[] = [
@@ -45,6 +73,7 @@ export const Route = createFileRoute('/api/fetch-data')({
               password: data.password,
             } as Admin);
           }
+          console.log(`[FETCH-DATA] Processed ${admins.length} admins.`);
 
           for (const row of rows) {
             const data = row.toObject();
@@ -109,6 +138,7 @@ export const Route = createFileRoute('/api/fetch-data')({
               } as TreasurerTransfer);
             }
           }
+          console.log(`[FETCH-DATA] Processed ${members.length} members, ${transactions.length} transactions, ${investments.length} investments, ${stakes.length} stakes, ${transfers.length} transfers.`);
 
           const expenses: Expense[] = [];
           for (const row of rows) {
@@ -125,6 +155,7 @@ export const Route = createFileRoute('/api/fetch-data')({
               } as Expense);
             }
           }
+          console.log(`[FETCH-DATA] Processed ${expenses.length} expenses.`);
 
           const responseData: Partial<AppState> = {
             members,
@@ -137,20 +168,9 @@ export const Route = createFileRoute('/api/fetch-data')({
             pendingSignups: [],
           };
 
-          // Compute ETag from all raw data strings and the response data
           rawDataStrings.push(JSON.stringify(responseData));
           const contentHash = crypto.createHash('md5').update(rawDataStrings.join('|')).digest('hex');
           const etag = `"${contentHash}"`;
-
-          // Check if client already has the latest data via If-None-Match
-          const clientEtag = request.headers.get('if-none-match');
-          if (clientEtag && clientEtag === etag) {
-            // Data hasn't changed — return 304 Not Modified
-            return new Response(null, {
-              status: 304,
-              headers: { 'etag': etag, 'cache-control': 'no-store' },
-            });
-          }
 
           const finalResponse = {
             success: true,
@@ -159,23 +179,27 @@ export const Route = createFileRoute('/api/fetch-data')({
             etag,
           };
 
+          setCachedData(finalResponse);
+          console.log("[FETCH-DATA] Data fetched and cached successfully.");
+
           return new Response(JSON.stringify(finalResponse), {
-            status: 200,
             headers: {
               'Content-Type': 'application/json',
-              'etag': etag,
-              'cache-control': 'no-store',
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+              'ETag': etag,
             },
           });
         } catch (error) {
-          console.error('Error fetching data from Google Sheets:', error);
+          console.error('[FETCH-DATA] Error fetching data from Google Sheets:', error);
           return new Response(JSON.stringify({
             success: false,
             error: 'Failed to fetch data from sheet',
             details: String(error),
           }), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
           });
         }
       },

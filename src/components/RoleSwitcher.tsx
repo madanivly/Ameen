@@ -13,6 +13,7 @@ export function RoleSwitcher() {
   const [open, setOpen] = useState(true);
 
   const setUser = (id: string, role: "member" | "admin" | "collector") => {
+    console.log('Setting user:', id, role);
     setState((s) => ({ ...s, currentUserId: id, currentRole: role }));
   };
 

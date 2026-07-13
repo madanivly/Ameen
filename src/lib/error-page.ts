@@ -21,10 +21,28 @@ export function renderErrorPage(): string {
       <h1>This page didn't load</h1>
       <p>Something went wrong on our end. You can try refreshing or head back home.</p>
       <div class="actions">
-        <button class="primary" onclick="location.reload()">Try again</button>
+        <button class="primary" onclick="retryWithCacheBust()">Try again</button>
         <a class="secondary" href="/">Go home</a>
       </div>
     </div>
+    <script>
+      /* Retry with a cache-busting navigate so TanStack Router re-runs fresh */
+      function retryWithCacheBust() {
+        try {
+          /* Clear any stale TanStack Router / query cache from session storage */
+          const keys: string[] = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key && (key.includes('tanstack') || key.includes('router') || key.includes('tsr') || key.includes('query'))) {
+              keys.push(key);
+            }
+          }
+          keys.forEach(k => sessionStorage.removeItem(k));
+        } catch (_) { /* ignore */ }
+        /* Force a hard navigation to the same path, bypassing any cached SPA state */
+        window.location.replace(window.location.pathname + '?_=' + Date.now());
+      }
+    </script>
   </body>
 </html>`;
 }

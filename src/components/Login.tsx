@@ -177,15 +177,17 @@ export function Login() {
                >
                  {isRegistering ? "Register" : "Sign In"}
                </Button>
-               <div className="text-center text-sm">
-                 <button
-                   type="button"
-                   onClick={() => setIsRegistering(!isRegistering)}
-                   className="text-emerald-600 hover:underline"
-                 >
-                   {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
-                 </button>
-               </div>
+                <div className="text-center text-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                    setIsRegistering(!isRegistering);
+                    }}
+                    className="text-emerald-600 hover:underline"
+                  >
+                    {isRegistering ? "Already have an account? Sign in" : "Need an account? Register"}
+                  </button>
+                </div>
 
                {msg && (
                  <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">

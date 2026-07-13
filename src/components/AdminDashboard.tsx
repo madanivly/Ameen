@@ -559,86 +559,86 @@ export function AdminDashboard() {
                           <div key={collector.id} className="mb-6 border rounded-lg p-4">
                               <div className="flex justify-between items-center mb-4">
                                   <h3 className="font-bold text-lg">{collector.name}</h3>
-                                  <div className="flex items-center gap-3">
-                                      <div className="font-bold text-emerald-700">Total: {fmt(collectorTotal)}</div>
-                                      {collectorTransactions.length > 0 && (
-                                          <Button
-                                              size="sm"
-                                              className="bg-emerald-600 hover:bg-emerald-700"
-                                              onClick={() => {
-                                                  collectorTransactions.forEach(t => {
-                                                      approvePayment(t.id);
-                                                  });
-                                                  toast.success(`Approved all payments for ${collector.name}`);
-                                              }}
-                                          >
-                                              Approve All
-                                          </Button>
-                                      )}
-                                  </div>
-                              </div>
-                              <Table>
-                                  <TableHeader>
-                                      <TableRow>
-                                          <TableHead>Member</TableHead>
-                                          <TableHead>ID</TableHead>
-                                          <TableHead>Mobile</TableHead>
-                                          <TableHead>Month</TableHead>
-                                          <TableHead className="text-right">Held</TableHead>
-                                      </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                      {collectorMembers.map(m => {
-                                          const memberTransactions = state.transactions.filter(t => t.memberId === m.id && !t.approved);
-                                          const months = [...new Set(memberTransactions.map(t => t.monthKey || 'N/A'))].map(mk => fmtMonthKey(mk)).join(', ');
-                                          return (
-                                              <TableRow key={m.id}>
-                                                  <TableCell>{m.name}</TableCell>
-                                                  <TableCell className="font-mono text-xs">{m.memberId}</TableCell>
-                                                  <TableCell>{m.mobile}</TableCell>
-                                                  <TableCell className="text-sm text-slate-600">{months || '—'}</TableCell>
-                                                  <TableCell className="text-right">{fmt(collectedByMember.get(m.id) ?? 0)}</TableCell>
-                                              </TableRow>
-                                          );
-                                      })}
-                                  </TableBody>
-                              </Table>
-                              {(() => {
-                                  const collectorId = state.admins.find(ad => ad.name === collector.name)?.id;
-                                  const collectorAdminApprovals = state.transactions.filter(t => {
-                                      if (t.approved || t.status !== 'held_by_admin') return false;
-                                      const member = state.members.find(m => m.id === t.memberId);
-                                      return t.adminId === collectorId || (member?.collectorName && member.collectorName.trim().toLowerCase() === collector.name.trim().toLowerCase());
-                                  });
-                                  return collectorAdminApprovals.length > 0 ? (
-                                      <div className="mt-4 text-right">
-                                          <Button
-                                              size="sm"
-                                              className="bg-emerald-600 hover:bg-emerald-700"
-                                              onClick={() => {
-                                                  collectorAdminApprovals.forEach(t => {
-                                                      approvePayment(t.id);
-                                                  });
-                                                  toast.success(`Approved all payments for ${collector.name}`);
-                                              }}
-                                          >
-                                              Approve All
-                                          </Button>
-                                      </div>
-                                  ) : null;
-                              })()}
-                          </div>
-                      );
-                  })}
-                  <Card className="p-4 mb-6 bg-emerald-50 border-2 border-emerald-200">
-                      <div className="flex justify-between items-center">
-                          <h3 className="font-bold text-lg text-emerald-900">All Collectors Total</h3>
-                          <div className="font-bold text-2xl text-emerald-700">{fmt(grandTotal)}</div>
-                      </div>
-                  </Card>
-              </>
-          );
-      })()}
+                                   <div className="flex items-center gap-3">
+                                       <div className="font-bold text-emerald-700">Total: {fmt(collectorTotal)}</div>
+                                       {collectorTransactions.length > 0 && (
+                                           <Button
+                                               size="sm"
+                                               className="bg-emerald-600 hover:bg-emerald-700"
+                                               onClick={() => {
+                                                   collectorTransactions.forEach(t => {
+                                                       approvePayment(t.id);
+                                                   });
+                                                   toast.success(`Approved all payments for ${collector.name}`);
+                                               }}
+                                           >
+                                               Approve All
+                                           </Button>
+                                       )}
+                                   </div>
+                               </div>
+                               <Table>
+                                   <TableHeader>
+                                       <TableRow>
+                                           <TableHead>Member</TableHead>
+                                           <TableHead>ID</TableHead>
+                                           <TableHead>Mobile</TableHead>
+                                           <TableHead>Month</TableHead>
+                                           <TableHead className="text-right">Held</TableHead>
+                                       </TableRow>
+                                   </TableHeader>
+                                   <TableBody>
+                                       {collectorMembers.map(m => {
+                                           const memberTransactions = state.transactions.filter(t => t.memberId === m.id && !t.approved);
+                                           const months = [...new Set(memberTransactions.map(t => t.monthKey || 'N/A'))].map(mk => fmtMonthKey(mk)).join(', ');
+                                           return (
+                                               <TableRow key={m.id}>
+                                                   <TableCell>{m.name}</TableCell>
+                                                   <TableCell className="font-mono text-xs">{m.memberId}</TableCell>
+                                                   <TableCell>{m.mobile}</TableCell>
+                                                   <TableCell className="text-sm text-slate-600">{months || '—'}</TableCell>
+                                                   <TableCell className="text-right">{fmt(collectedByMember.get(m.id) ?? 0)}</TableCell>
+                                               </TableRow>
+                                           );
+                                       })}
+                                   </TableBody>
+                               </Table>
+                               {(() => {
+                                   const collectorId = state.admins.find(ad => ad.name === collector.name)?.id;
+                                   const collectorAdminApprovals = state.transactions.filter(t => {
+                                       if (t.approved || t.status !== 'held_by_admin') return false;
+                                       const member = state.members.find(m => m.id === t.memberId);
+                                       return t.adminId === collectorId || (member?.collectorName && member.collectorName.trim().toLowerCase() === collector.name.trim().toLowerCase());
+                                   });
+                                   return collectorAdminApprovals.length > 0 ? (
+                                       <div className="mt-4 text-right">
+                                           <Button
+                                               size="sm"
+                                               className="bg-emerald-600 hover:bg-emerald-700"
+                                               onClick={() => {
+                                                   collectorAdminApprovals.forEach(t => {
+                                                       approvePayment(t.id);
+                                                   });
+                                                   toast.success(`Approved all payments for ${collector.name}`);
+                                               }}
+                                           >
+                                               Approve All
+                                           </Button>
+                                       </div>
+                                   ) : null;
+                               })()}
+                           </div>
+                       );
+                   })}
+                   <Card className="p-4 mb-6 bg-emerald-50 border-2 border-emerald-200">
+                       <div className="flex justify-between items-center">
+                           <h3 className="font-bold text-lg text-emerald-900">All Collectors Total</h3>
+                           <div className="font-bold text-2xl text-emerald-700">{fmt(grandTotal)}</div>
+                       </div>
+                   </Card>
+               </>
+           );
+       })()}
 
 
       {a.role === "admin" && (

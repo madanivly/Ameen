@@ -17,6 +17,12 @@ export const Route = createFileRoute('/api/batch-update')({
         try {
           console.log('[BATCH-UPDATE] POST request received');
           const doc = await getDoc();
+          if (!doc) {
+            return new Response(JSON.stringify({ error: 'Google Sheets not configured' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+            });
+          }
           let sheet = doc.sheetsByTitle['Data'];
           if (!sheet) {
             console.log('[BATCH-UPDATE] Data sheet not found, creating new sheet');
