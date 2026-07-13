@@ -42,6 +42,7 @@ export const Route = createFileRoute('/api/fetch-data')({
           const doc = await getDoc();
           console.log('Doc loaded, sheets:', doc.sheetCount);
           const dataSheet = doc.sheetsByTitle['Data'];
+          const adminsSheet = doc.sheetsByTitle['Admins'];
 
           if (!dataSheet) {
             console.error('Data sheet not found');
@@ -63,6 +64,7 @@ export const Route = createFileRoute('/api/fetch-data')({
           }
 
           const rows = await dataSheet.getRows();
+          const adminRows = adminsSheet ? await adminsSheet.getRows() : [];
 
           // Build a hash of all row data for ETag-based change detection
           const rawDataStrings: string[] = [];
@@ -72,6 +74,19 @@ export const Route = createFileRoute('/api/fetch-data')({
           const investments: Investment[] = [];
           const stakes: MemberInvestmentStake[] = [];
           const transfers: TreasurerTransfer[] = [];
+
+          for (const row of adminRows) {
+            const data = row.toObject();
+            rawDataStrings.push(JSON.stringify(data));
+            admins.push({
+              id: data.id,
+              name: data.name,
+              role: data.role,
+              mobile: data.mobile,
+              whatsapp: data.whatsapp,
+              password: data.password,
+            } as Admin);
+          }
 
           for (const row of rows) {
             const data = row.toObject();
@@ -93,14 +108,6 @@ export const Route = createFileRoute('/api/fetch-data')({
                 registrationFeePaid: data.registrationFeePaid === 'true' || data.registrationFeePaid === true,
                 joinedAt: data.joinedAt,
               } as User);
-            } else if (data.type === 'admin' || (data.id && data.name && (data.role === 'admin' || data.role === 'collector'))) {
-              admins.push({
-                id: data.id,
-                name: data.name,
-                role: data.role,
-                mobile: data.mobile,
-                whatsapp: data.whatsapp,
-              } as Admin);
             } else if (data.type === 'transaction' || (data.id && data.memberId && (data.type === 'registration' || data.type === 'monthly'))) {
               transactions.push({
                 id: data.id,
