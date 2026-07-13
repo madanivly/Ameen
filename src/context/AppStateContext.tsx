@@ -34,7 +34,7 @@ function seed(): AppState {
      currentUserId: null,
      currentRole: "member",
      members: [],
-     admins: [],
+     admins: [{ id: "admin", name: "Admin", role: "admin", password: "admin" }],
      transactions: [],
      investments: [],
      stakes: [],
