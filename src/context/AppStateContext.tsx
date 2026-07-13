@@ -139,7 +139,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       // Sign-in mode: validate existing credentials
       if (!mobile && !whatsapp && !nomineeName) {
         // This is sign-in (no registration fields provided)
-        const admin = state.admins.find((a) => a.id === name);
+        const admin = state.admins.find((a) => a.id === name || a.name === name);
         if (admin) {
           if (admin.password === password) {
             setState((s) => ({ ...s, currentUserId: admin.id, currentRole: "admin" }));
