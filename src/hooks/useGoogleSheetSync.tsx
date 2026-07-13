@@ -44,7 +44,8 @@ export function useGoogleSheetSync({
   }, [onConnectionStatusChange]);
 
   const fetchData = useCallback(async () => {
-    if (!isActiveRef.current) return;
+    // Removed !isActiveRef.current check to allow manual refreshes even if polling is "stopped"
+    console.log('Fetching data...');
 
     try {
       updateConnectionStatus('connecting');
