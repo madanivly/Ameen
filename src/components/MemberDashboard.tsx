@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAppState, monthKey, FEES } from "@/context/AppStateContext";
+import { useAppState, monthKey } from "@/context/AppStateContext";
 import { AppShell } from "./AppShell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,11 +34,12 @@ export function MemberDashboard() {
      memberProfitShare,
      memberActiveInvestedCapital,
      missedMonthsCount,
-     memberMonthlyPaid,
-     logPayment,
-     reassignMemberToCollector,
-     updateMember,
-   } = useAppState();
+      memberMonthlyPaid,
+      logPayment,
+      reassignMemberToCollector,
+      updateMember,
+      refreshData,
+    } = useAppState();
 
    const m = currentMember();
    if (!m) return null;
@@ -92,12 +93,15 @@ export function MemberDashboard() {
 
 
   return (
-    <AppShell
-      title={`Welcome, ${m.name.split(" ")[0]}`}
-      subtitle={`Assigned collector: ${collectorName} | Mobile: ${collectorMobile} | WhatsApp: ${collectorWhatsapp}`}
-      actions={null}
-    >
-      <Card className="mb-6 p-5">
+      <AppShell
+        title={`Welcome, ${m.name.split(" ")[0]}`}
+        subtitle={`Assigned collector: ${collectorName} | Mobile: ${collectorMobile} | WhatsApp: ${collectorWhatsapp}`}
+        actions={null}
+      >
+        <div className="mb-4">
+            <Button variant="outline" onClick={refreshData}>Refresh Data</Button>
+        </div>
+        <Card className="mb-6 p-5">
           <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                   {m.profilePhoto ? <img src={m.profilePhoto} alt="Profile" className="w-20 h-20 rounded-full object-cover" /> : <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">No Photo</div>}
