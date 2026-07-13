@@ -78,6 +78,7 @@ interface AppStateContextValue {
   updateMember: (memberId: string, updates: Partial<User>) => void;
   reassignMemberToCollector: (memberId: string, newCollector: Admin) => void;
   updateAdmin: (id: string, updates: Partial<Admin>) => void;
+  updateAdminPassword: (id: string, password: string) => void;
   addCollector: (collector: { name: string; mobile: string; whatsapp: string }) => void;
   removeCollector: (id: string) => void;
   addExpense: (expense: { description: string; amount: number; category: string; notes?: string }) => void;
@@ -371,6 +372,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setState((s) => ({ ...s, admins: s.admins.map(a => a.id === id ? { ...a, ...updates } : a) }));
     };
 
+    const updateAdminPassword = (id: string, password: string) => {
+        setState((s) => ({ ...s, admins: s.admins.map(a => a.id === id ? { ...a, password } : a) }));
+    };
+
     const addInvestment = (investment: { name: string; description: string; capitalDeployed: number; }) => {
       setState((s) => {
         const invId = `inv_${Date.now()}`;
@@ -541,6 +546,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       updateMember,
       reassignMemberToCollector,
       updateAdmin,
+      updateAdminPassword,
       addInvestment,
       updateInvestment,
       addCollector,

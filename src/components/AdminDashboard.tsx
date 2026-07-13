@@ -28,7 +28,7 @@ import { fmt, fmtDate, fmtMonthKey } from "@/lib/format";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import { PrintableReport } from "./PrintableReport";
-import { Trash2 } from "lucide-react";
+import { Trash2, Key } from "lucide-react";
 
 export function AdminDashboard() {
   const {
@@ -45,6 +45,7 @@ export function AdminDashboard() {
     updateAdmin,
     memberProfitShare,
     memberActiveInvestedCapital,
+    updateAdminPassword,
     addCollector,
     removeCollector,
     removeMember,
@@ -73,9 +74,10 @@ export function AdminDashboard() {
    const [collectorForm, setCollectorForm] = useState({ name: "", mobile: "", whatsapp: "" });
    const [memberToRemove, setMemberToRemove] = useState<any>(null);
    const [expensesOpen, setExpensesOpen] = useState(false);
-   const [expenseForm, setExpenseForm] = useState({ description: "", amount: "", category: "Operations", notes: "" });
-
-  const myMembers = useMemo(
+    const [expenseForm, setExpenseForm] = useState({ description: "", amount: "", category: "Operations", notes: "" });
+    const [newAdminPassword, setNewAdminPassword] = useState("");
+ 
+   const myMembers = useMemo(
     () => {
         if (!a) return [];
         return state.members.filter((m) => 
@@ -405,14 +407,30 @@ export function AdminDashboard() {
        </Card>
        )}
 
-      {a.role === 'admin' && (
-        <div className="mb-4 flex gap-2">
-            <Button onClick={() => window.print()}>Print Member Report</Button>
-            <PrintableReport state={state} />
-            <Button variant="outline" onClick={refreshData}>Refresh Data</Button>
-            <Button variant="destructive" onClick={clearAllSheetData}>Clear All Sheet Data</Button>
-        </div>
-      )}
+       {a.role === 'admin' && (
+         <div className="mb-4 flex gap-2">
+             <Button onClick={() => window.print()}>Print Member Report</Button>
+             <PrintableReport state={state} />
+             <Button variant="outline" onClick={refreshData}>Refresh Data</Button>
+             <Button variant="destructive" onClick={clearAllSheetData}>Clear All Sheet Data</Button>
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline"><Key className="mr-2 h-4 w-4" /> Change Password</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader><DialogTitle>Change Admin Password</DialogTitle></DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Input type="password" value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)} placeholder="New Password" />
+                        <Button onClick={() => {
+                            updateAdminPassword(a.id, newAdminPassword);
+                            toast.success("Password updated successfully");
+                            setNewAdminPassword("");
+                        }}>Update Password</Button>
+                    </div>
+                </DialogContent>
+             </Dialog>
+         </div>
+       )}
       
       {a.role === 'admin' ? (
         <MemberTable members={allMembers} title="All Registered Members" />
