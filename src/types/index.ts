@@ -25,6 +25,7 @@ export interface Admin {
   id: string;
   name: string;
   role: Role;
+  password?: string;
   mobile?: string;
   whatsapp?: string;
 }

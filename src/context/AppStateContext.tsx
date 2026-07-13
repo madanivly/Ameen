@@ -34,7 +34,7 @@ function seed(): AppState {
      currentUserId: null,
      currentRole: "member",
      members: [],
-     admins: [],
+     admins: [{ id: "admin", name: "Admin", role: "admin", password: "admin" }],
      transactions: [],
      investments: [],
      stakes: [],
@@ -138,10 +138,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       // Sign-in mode: validate existing credentials
       if (!mobile && !whatsapp && !nomineeName) {
         // This is sign-in (no registration fields provided)
-        const adminByName = state.admins.find((a) => a.name === name);
-        if (adminByName) {
-          setState((s) => ({ ...s, currentUserId: adminByName.id, currentRole: "admin" }));
-          return { ok: true, message: "Logged in as admin." };
+        const admin = state.admins.find((a) => a.id === name);
+        if (admin) {
+          if (admin.password === password) {
+            setState((s) => ({ ...s, currentUserId: admin.id, currentRole: "admin" }));
+            return { ok: true, message: "Logged in as admin." };
+          } else {
+            return { ok: false, message: "Incorrect password." };
+          }
         }
         
         const member = state.members.find((m) => m.memberId === name || m.id === name);
@@ -154,12 +158,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           }
         }
         
-        const adminById = state.admins.find((a) => a.id === name);
-        if (adminById && password === "admin123") {
-          setState((s) => ({ ...s, currentUserId: adminById.id, currentRole: "admin" }));
-          return { ok: true, message: "Logged in as admin." };
-        }
-        
         return { ok: false, message: "Member ID or password is incorrect." };
       }
       
@@ -167,7 +165,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const namePrefix = (name || "MEM").substring(0, 3).toUpperCase();
       const nextNumber = state.members.length + 1;
       const nextId = namePrefix + String(nextNumber).padStart(3, '0');
-      const isFirstMember = state.members.length === 0;
       const newMember: User = {
         id: nextId,
         memberId: nextId,
@@ -184,39 +181,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         nomineeAddress: nomineeAddress || "",
         nomineeContact: nomineeContact || "",
       };
-      if (isFirstMember) {
-        newMember.role = "admin";
-        newMember.adminId = nextId;
-        newMember.collectorName = name || "Member";
-      }
-      if (isFirstMember) {
-        newMember.role = "admin";
-        setState((s) => ({
-          ...s,
-          admins: [...s.admins, { id: newMember.id, name: newMember.name, role: "admin" }],
-          members: [...s.members, newMember],
-          currentUserId: newMember.id,
-          currentRole: "admin",
-        }));
-      } else {
-        fetch('/api/update-data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sheet: 'Data', type: 'member', ...newMember }),
-        }).then(async (res) => {
-          console.log('Member registration persistence response:', await res.json());
-          if (res.ok) {
-            triggerDataRefresh();
-            setState((s) => ({
-              ...s,
-              members: [...s.members, newMember],
-              currentUserId: newMember.id,
-              currentRole: "member",
-            }));
-          }
-        }).catch(err => console.error('Failed to persist new member:', err));
-      }
-      return { ok: true, message: `Account created${isFirstMember ? " as admin" : ""} — pending 10 QR registration fee approval.` };
+      
+      fetch('/api/update-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheet: 'Data', type: 'member', ...newMember }),
+      }).then(async (res) => {
+        console.log('Member registration persistence response:', await res.json());
+        if (res.ok) {
+          triggerDataRefresh();
+          setState((s) => ({
+            ...s,
+            members: [...s.members, newMember],
+            currentUserId: newMember.id,
+            currentRole: "member",
+          }));
+        }
+      }).catch(err => console.error('Failed to persist new member:', err));
+      
+      return { ok: true, message: `Account created — pending 10 QR registration fee approval.` };
     };
 
     const logout = () => setState((s) => ({ ...s, currentUserId: null, currentRole: "member" }));
