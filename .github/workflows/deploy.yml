@@ -1,0 +1,22 @@
+name: Deploy to Asura Hosting
+
+on:
+  push:
+    branches:
+      - main  # Change this to "master" if your repository's primary branch is called master
+
+jobs:
+  web-deploy:
+    name: Deploy Website
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v4
+
+    - name: 📂 Sync Files to Asura
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: 198.251.81.49
+        username: github-deploy@madanimedia.com
+        password: ${{ secrets.FTP_PASSWORD }}
+        server-dir: /  # Keep this as "/" because your FTP user is locked to your public_html directory
