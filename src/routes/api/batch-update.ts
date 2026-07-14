@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getDoc } from '../../lib/google-sheets'
+import pool from '../../lib/database'
 
 interface BatchItem {
+  tableName: string;
   id?: string;
   [key: string]: any;
 }
@@ -14,65 +15,36 @@ export const Route = createFileRoute('/api/batch-update')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const body = (await request.json()) as BatchRequest;
+        if (!body.operations || !Array.isArray(body.operations) || body.operations.length === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'No operations provided. Expected { operations: [...] }',
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const connection = await pool.getConnection();
         try {
-          console.log('[BATCH-UPDATE] POST request received');
-          const doc = await getDoc();
-          if (!doc) {
-            return new Response(JSON.stringify({ error: 'Google Sheets not configured' }), {
-              status: 503,
-              headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-            });
-          }
-          let sheet = doc.sheetsByTitle['Data'];
-          if (!sheet) {
-            console.log('[BATCH-UPDATE] Data sheet not found, creating new sheet');
-            sheet = await doc.addSheet({ title: 'Data' });
-          }
-
-          const body = (await request.json()) as BatchRequest;
-
-          if (!body.operations || !Array.isArray(body.operations) || body.operations.length === 0) {
-            return new Response(JSON.stringify({
-              success: false,
-              error: 'No operations provided. Expected { operations: [...] }',
-            }), {
-              status: 400,
-              headers: { 'Content-Type': 'application/json' },
-            });
-          }
-
-          console.log(`[BATCH-UPDATE] Processing ${body.operations.length} operations`);
-
-          const existingRows = await sheet.getRows();
+          await connection.beginTransaction();
           const results: { id?: string; status: 'updated' | 'created' | 'error'; error?: string }[] = [];
 
           for (const item of body.operations) {
             try {
-              const { sheet: sheetName, ...rowData } = item;
-
+              const { tableName, ...rowData } = item;
               if (rowData.id) {
-                // Try to find and update existing row
-                let found = false;
-                for (const row of existingRows) {
-                  const rowDataObj = row.toObject();
-                  if (rowDataObj.id === rowData.id) {
-                    Object.keys(rowData).forEach(key => {
-                      (row as any)[key] = rowData[key];
-                    });
-                    await row.save();
-                    results.push({ id: rowData.id, status: 'updated' });
-                    found = true;
-                    break;
-                  }
-                }
-
-                if (!found) {
-                  await sheet.addRow(rowData);
+                const [rows]: any[] = await connection.query(`SELECT * FROM ${tableName} WHERE id = ?`, [rowData.id]);
+                if (rows.length > 0) {
+                  await connection.query(`UPDATE ${tableName} SET ? WHERE id = ?`, [rowData, rowData.id]);
+                  results.push({ id: rowData.id, status: 'updated' });
+                } else {
+                  await connection.query(`INSERT INTO ${tableName} SET ?`, [rowData]);
                   results.push({ id: rowData.id, status: 'created' });
                 }
               } else {
-                // No ID, add as new row
-                await sheet.addRow(rowData);
+                await connection.query(`INSERT INTO ${tableName} SET ?`, [rowData]);
                 results.push({ status: 'created' });
               }
             } catch (itemError) {
@@ -85,6 +57,7 @@ export const Route = createFileRoute('/api/batch-update')({
             }
           }
 
+          await connection.commit();
           return new Response(JSON.stringify({
             success: true,
             results,
@@ -94,6 +67,7 @@ export const Route = createFileRoute('/api/batch-update')({
             headers: { 'Content-Type': 'application/json' },
           });
         } catch (error) {
+          await connection.rollback();
           console.error('Error in batch update:', error);
           return new Response(JSON.stringify({
             success: false,
@@ -103,6 +77,8 @@ export const Route = createFileRoute('/api/batch-update')({
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           });
+        } finally {
+          connection.release();
         }
       },
     },
