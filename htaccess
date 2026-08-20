@@ -1,0 +1,50 @@
+# Disable LiteSpeed Anti-Bot Verification / CAPTCHA for Social Scrapers
+<IfModule LiteSpeed>
+    RewriteEngine On
+    
+    # Check for WhatsApp, Facebook, Telegram, and Twitter scrapers
+    RewriteCond %{HTTP_USER_AGENT} (WhatsApp|facebookexternalhit|Facebot|TelegramBot|Twitterbot|LinkedInBot) [NC]
+    
+    # Force LiteSpeed to skip CAPTCHA / Bot Verification
+    RewriteRule .* - [E=verifycaptcha:deny]
+</IfModule>
+
+# Disable Imunify360 WebShield JS Challenge
+<IfModule mod_env.c>
+    SetEnvIfNoCase User-Agent "(WhatsApp|facebookexternalhit|Facebot|TelegramBot|Twitterbot)" imunify360_bypass=1
+</IfModule>
+
+# Force LiteSpeed to handle PHP files dynamically (never cache as static)
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Disable all caching for PHP responses
+<FilesMatch "\.php$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+</FilesMatch>
+
+# SPA Routing
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
+
+# DB credentials for PHP via SetEnv
+SetEnv DB_HOST localhost
+SetEnv DB_USER madanime_ameen
+SetEnv DB_PASSWORD Pandikasala!1!1
+SetEnv DB_NAME madanime_ameen
+
+# SEO and Caching Rules
+<FilesMatch "\.(html|htm)$">
+    FileETag None
+    <IfModule mod_headers.c>
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    </IfModule>
+</FilesMatch>

@@ -63,7 +63,7 @@ export function useGoogleSheetSync({
         headers['If-None-Match'] = etagRef.current;
       }
 
-      const response = await fetch(`/api/fetch-data?t=${timestamp}&cacheBust=${Math.random()}`, {
+      const response = await fetch(`/api/api.php?endpoint=fetch-data&t=${timestamp}&cacheBust=${Math.random()}`, {
         method: 'GET',
         headers,
       });
@@ -114,18 +114,25 @@ export function useGoogleSheetSync({
       retryCountRef.current = 0;
 
       if (result.success && result.data) {
+        const newEtag = result.etag || response.headers.get('etag');
+        if (newEtag && newEtag === etagRef.current) {
+          // Data hasn't changed, so don't update
+          updateConnectionStatus('connected');
+          return;
+        }
+        etagRef.current = newEtag;
         onDataUpdate?.(result.data);
         updateConnectionStatus('connected');
       } else if (result.error) {
         // Don't throw for expected data fetch errors, just report them
-        console.warn('Google Sheets sync returned an error:', result.error);
+        console.warn('Data sync returned an error:', result.error);
         updateConnectionStatus('error');
         return;
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       // Log for debugging but prevent crashing the app context
-      console.error('Google Sheets sync caught error:', err);
+      console.error('Data sync caught error:', err);
       
       retryCountRef.current += 1;
       

@@ -37,8 +37,12 @@ fi
 GOOGLE_SHEET_ID=$(grep "^GOOGLE_SHEET_ID=" .env | cut -d'=' -f2)
 GOOGLE_SERVICE_ACCOUNT_EMAIL=$(grep "^GOOGLE_SERVICE_ACCOUNT_EMAIL=" .env | cut -d'=' -f2)
 GOOGLE_PRIVATE_KEY=$(grep "^GOOGLE_PRIVATE_KEY=" .env | cut -d'=' -f2 | sed 's/"//g')
+DB_HOST=$(grep "^DB_HOST=" .env | cut -d'=' -f2)
+DB_USER=$(grep "^DB_USER=" .env | cut -d'=' -f2)
+DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d'=' -f2)
+DB_NAME=$(grep "^DB_NAME=" .env | cut -d'=' -f2)
 
-if [ -z "$GOOGLE_SHEET_ID" ] || [ -z "$GOOGLE_SERVICE_ACCOUNT_EMAIL" ] || [ -z "$GOOGLE_PRIVATE_KEY" ]; then
+if [ -z "$GOOGLE_SHEET_ID" ] || [ -z "$GOOGLE_SERVICE_ACCOUNT_EMAIL" ] || [ -z "$GOOGLE_PRIVATE_KEY" ] || [ -z "$DB_HOST" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ] || [ -z "$DB_NAME" ]; then
     echo "❌ Missing environment variables in .env file"
     exit 1
 fi
@@ -46,6 +50,9 @@ fi
 echo "📝 Environment variables found:"
 echo "   - GOOGLE_SHEET_ID: ${GOOGLE_SHEET_ID:0:20}..."
 echo "   - GOOGLE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_SERVICE_ACCOUNT_EMAIL:0:30}..."
+echo "   - DB_HOST: ${DB_HOST}"
+echo "   - DB_USER: ${DB_USER}"
+echo "   - DB_NAME: ${DB_NAME}"
 echo ""
 
 echo "🚀 Adding environment variables to Vercel..."
@@ -65,6 +72,26 @@ fi
 vercel env add GOOGLE_PRIVATE_KEY <<< "$GOOGLE_PRIVATE_KEY" --production
 if [ $? -ne 0 ]; then
     echo "⚠️  Failed to add GOOGLE_PRIVATE_KEY (it may already exist)"
+fi
+
+vercel env add DB_HOST <<< "$DB_HOST" --production
+if [ $? -ne 0 ]; then
+    echo "⚠️  Failed to add DB_HOST (it may already exist)"
+fi
+
+vercel env add DB_USER <<< "$DB_USER" --production
+if [ $? -ne 0 ]; then
+    echo "⚠️  Failed to add DB_USER (it may already exist)"
+fi
+
+vercel env add DB_PASSWORD <<< "$DB_PASSWORD" --production
+if [ $? -ne 0 ]; then
+    echo "⚠️  Failed to add DB_PASSWORD (it may already exist)"
+fi
+
+vercel env add DB_NAME <<< "$DB_NAME" --production
+if [ $? -ne 0 ]; then
+    echo "⚠️  Failed to add DB_NAME (it may already exist)"
 fi
 
 echo ""

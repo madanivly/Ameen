@@ -1,0 +1,12 @@
+# Madani Media
+
+> Doha-based digital agency offering affordable web design, branding, and digital marketing for small businesses across Qatar.
+
+## Pages
+
+- [Home](/): Overview of Madani Media services in Qatar.
+- [Services](/services): Branding, graphic design, photography, packaging, web design, digital marketing, video editing and 3D rendering.
+- [Web Design Packages](/web-design-packages): Pricing plans for websites in Qatar.
+- [Portfolio](/portfolio): Selected branding, packaging, photography and social media work.
+- [About](/about): About the Madani Media team and approach.
+- [Contact](/contact): Get a free quote or reach the team in Doha.

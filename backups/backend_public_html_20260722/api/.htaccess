@@ -1,0 +1,19 @@
+# Force LiteSpeed to handle PHP files dynamically (never cache as static)
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Disable all caching for PHP responses
+<FilesMatch "\.php$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+</FilesMatch>
+
+# Disable rewriting in this directory
+RewriteEngine Off
+
+# DB credentials for PHP via SetEnv
+SetEnv DB_HOST 198.251.83.217
+SetEnv DB_USER madanime_ameen
+SetEnv DB_PASSWORD 853VXL3SPVM4jWt2qEvF
+SetEnv DB_NAME madanime_ameen

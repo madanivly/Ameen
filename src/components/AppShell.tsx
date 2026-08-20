@@ -1,6 +1,6 @@
 import { useAppState } from "@/context/AppStateContext";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, LogOut } from "lucide-react";
+import { ShieldCheck, LogOut, ArrowLeftRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function AppShell({
@@ -14,22 +14,30 @@ export function AppShell({
   children: ReactNode;
   actions?: ReactNode;
 }) {
-  const { logout, currentMember, currentAdmin, state } = useAppState();
+  const { logout, currentMember, currentAdmin, state, setState } = useAppState();
   const m = currentMember();
   const a = currentAdmin();
-  const who = a?.name ?? m?.name ?? "Guest";
+  // When a member is promoted to collector, their member ID won't match the collector admin ID.
+  // Match by ID first, then fall back to matching by name.
+  const loggedInName = a?.name ?? m?.name ?? "";
+  const collectorAdmin = state.admins.find(
+    (adm) =>
+      adm.role === "collector" &&
+      (adm.id === state.currentUserId ||
+        (loggedInName && adm.name.trim().toLowerCase() === loggedInName.trim().toLowerCase()))
+  );
+  const who = a?.name ?? collectorAdmin?.name ?? m?.name ?? "Guest";
+  const isCollectorUser = !!collectorAdmin;
 
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-600 text-white">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
+            <img src="/logo.png" alt="GRT Logo" className="h-10 w-auto" />
             <div>
               <div className="text-sm font-bold tracking-tight text-slate-900">
-                Ameen Portal
+                GRT Portal
               </div>
               <div className="text-xs text-slate-500">
                 {state.currentRole === "admin" ? "Admin Console" : state.currentRole === "collector" ? "Collector Portal" : "Member Portal"}
@@ -46,7 +54,7 @@ export function AppShell({
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-7xl px-4 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-20">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>

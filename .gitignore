@@ -10,12 +10,18 @@ node_modules
 # Environment files
 .env
 .env.local
+*.env
+*.env.save
+backend/.env*
 
 # Lovable config
 .lovable/
 
 # OS files
 Icon
+set_secrets.py
+set-github-secrets.cjs
+
 
 # Duplicate/old project
 New/

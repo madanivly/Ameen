@@ -1,129 +1,75 @@
-import { useState } from "react";
 import { useAppState } from "@/context/AppStateContext";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Wrench } from "lucide-react";
+import { ArrowLeftRight, Shield, UserCheck, User } from "lucide-react";
+import { Role } from "@/types";
 
-/**
- * Developer-only floating panel to quickly switch identity/role for testing.
- * Not part of the production experience.
- */
 export function RoleSwitcher() {
-  const { state, setState, resetSeed, logout } = useAppState();
-  const [open, setOpen] = useState(true);
+  const { state, setState, currentAdmin } = useAppState();
+  const a = currentAdmin();
 
-  const setUser = (id: string, role: "member" | "admin" | "collector") => {
-    console.log('Setting user:', id, role);
-    setState((s) => ({ ...s, currentUserId: id, currentRole: role }));
+  // Master admins may use all three views. A promoted member may only move
+  // between their own Collector and Member portals.
+  const isMasterAdmin = a?.role === "admin" || state.currentUserId?.toLowerCase() === "admin";
+  const isPromotedMember = state.members.some(
+    (member) => member.id === state.currentUserId && Boolean(member.isCollector),
+  );
+
+  if (!isMasterAdmin && !isPromotedMember) return null;
+
+  const handleRoleChange = (newRole: Role) => {
+    setState((s) => ({ ...s, currentRole: newRole }));
   };
 
-  const currentAdmin = state.admins.find((a) => a.id === state.currentUserId);
-  const isCollector = currentAdmin?.role === "collector";
-
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72">
-      <Card className="border-emerald-200 bg-white/95 shadow-xl backdrop-blur">
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-t-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white"
-        >
-          <span className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Dev · Role Switcher
-          </span>
-          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-        </button>
-        {open && (
-          <div className="space-y-3 p-3 text-sm">
-            <div>
-              <div className="mb-1 text-xs font-medium text-slate-500">
-                Treasurers & Admins
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {state.admins
-                  .filter((a) => a.role === "admin")
-                  .map((a) => (
-                    <Button
-                      key={a.id}
-                      size="sm"
-                      variant={state.currentUserId === a.id ? "default" : "outline"}
-                      className={
-                        state.currentUserId === a.id
-                          ? "bg-emerald-600 hover:bg-emerald-700"
-                          : ""
-                      }
-                      onClick={() => setUser(a.id, "admin")}
-                    >
-                      {a.name.split(" ")[0]}
-                    </Button>
-                  ))}
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 text-xs font-medium text-slate-500">
-                Collectors
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {state.admins
-                  .filter((a) => a.role === "collector")
-                  .map((a) => (
-                    <Button
-                      key={a.id}
-                      size="sm"
-                      variant={state.currentUserId === a.id ? "default" : "outline"}
-                      className={
-                        state.currentUserId === a.id
-                          ? "bg-sky-600 hover:bg-sky-700"
-                          : "border-sky-200 text-sky-800"
-                      }
-                      onClick={() => setUser(a.id, "collector")}
-                    >
-                      {a.name.split(" ")[0]}
-                    </Button>
-                  ))}
-              </div>
-            </div>
-            <div>
-              <div className="mb-1 text-xs font-medium text-slate-500">Members</div>
-              <div className="flex flex-wrap gap-1">
-                {state.members
-                  .filter((m) => m.role !== "collector")
-                  .map((m) => (
-                    <Button
-                      key={m.id}
-                      size="sm"
-                      variant={state.currentUserId === m.id ? "default" : "outline"}
-                      className={
-                        state.currentUserId === m.id
-                          ? "bg-emerald-600 hover:bg-emerald-700"
-                          : ""
-                      }
-                      onClick={() => setUser(m.id, "member")}
-                    >
-                      {m.name.split(" ")[0]}
-                      {!m.registrationFeePaid && " ⏳"}
-                    </Button>
-                  ))}
-              </div>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button size="sm" variant="outline" className="flex-1" onClick={logout}>
-                Logout
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
-                onClick={() => {
-                  if (confirm("Reset all local data to seed?")) resetSeed();
-                }}
-              >
-                Reset seed
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
+    <div className="fixed bottom-0 inset-x-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-2 shadow-2xl safe-area-bottom">
+      <div className="max-w-md mx-auto flex flex-row items-center justify-between gap-1.5 px-1 sm:px-2">
+        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase hidden sm:inline shrink-0 pr-1">
+          {isMasterAdmin ? "Admin Switcher:" : "Your Portal:"}
+        </span>
+        <div className="flex flex-1 justify-between gap-1.5">
+          {isMasterAdmin && (
+          <Button
+            variant={state.currentRole === "admin" ? "default" : "ghost"}
+            size="sm"
+            className={`flex-1 text-[10px] xs:text-xs py-1.5 h-8 font-medium transition-all px-1 xs:px-2 ${
+              state.currentRole === "admin"
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+            onClick={() => handleRoleChange("admin")}
+          >
+            <Shield className="h-3 w-3 xs:h-3.5 xs:w-3.5 mr-1 shrink-0" />
+            <span className="truncate">Admin</span>
+          </Button>
+          )}
+          <Button
+            variant={state.currentRole === "collector" ? "default" : "ghost"}
+            size="sm"
+            className={`flex-1 text-[10px] xs:text-xs py-1.5 h-8 font-medium transition-all px-1 xs:px-2 ${
+              state.currentRole === "collector"
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+            onClick={() => handleRoleChange("collector")}
+          >
+            <UserCheck className="h-3 w-3 xs:h-3.5 xs:w-3.5 mr-1 shrink-0" />
+            <span className="truncate">Collector</span>
+          </Button>
+          <Button
+            variant={state.currentRole === "member" ? "default" : "ghost"}
+            size="sm"
+            className={`flex-1 text-[10px] xs:text-xs py-1.5 h-8 font-medium transition-all px-1 xs:px-2 ${
+              state.currentRole === "member"
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+                : "text-slate-300 hover:text-white hover:bg-slate-800"
+            }`}
+            onClick={() => handleRoleChange("member")}
+          >
+            <User className="h-3 w-3 xs:h-3.5 xs:w-3.5 mr-1 shrink-0" />
+            <span className="truncate">Member</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

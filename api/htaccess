@@ -1,0 +1,5 @@
+SetEnv DB_HOST localhost
+SetEnv DB_NAME madanime_ameen
+SetEnv DB_USER madanime_ameen
+
+SetEnv DB_PASSWORD Pandikasala!1!1

@@ -1,0 +1,62 @@
+const http = require('http');
+const url = require('url');
+
+// In-memory temporary database
+let db = {
+  members: [],
+  admins: [{ id: 'admin_1', name: 'Super Admin', role: 'superadmin', username: 'admin' }],
+  transactions: [],
+  investments: [],
+  stakes: [],
+  transfers: [],
+  expenses: [],
+  pins: []
+};
+
+const server = http.createServer((req, requireResponse) => {
+  // Enable CORS headers so your React app can talk to this port
+  requireResponse.setHeader('Access-Control-Allow-Origin', '*');
+  requireResponse.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
+  requireResponse.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  requireResponse.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    requireResponse.writeHead(200);
+    requireResponse.end();
+    return;
+  }
+
+  const parsedUrl = url.parse(req.url, true);
+  const endpoint = parsedUrl.query.endpoint;
+
+  if (req.method === 'GET' && endpoint === 'fetch-data') {
+    requireResponse.writeHead(200);
+    requireResponse.end(JSON.stringify({ success: true, data: db }));
+  } else if (req.method === 'POST' && endpoint === 'update-data') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        const { type, action, data } = payload;
+
+        if (action === 'insert' && db[type + 's']) {
+          db[type + 's'].push({ id: Date.now().toString(), ...data });
+        }
+
+        requireResponse.writeHead(200);
+        requireResponse.end(JSON.stringify({ success: true, data: db }));
+      } catch (e) {
+        requireResponse.writeHead(400);
+        requireResponse.end(JSON.stringify({ success: false, error: 'Invalid JSON' }));
+      }
+    });
+  } else {
+    requireResponse.writeHead(404);
+    requireResponse.end(JSON.stringify({ error: 'Not Found' }));
+  }
+});
+
+server.listen(8080, () => {
+  console.log('Mock server is live at http://localhost:8080');
+});

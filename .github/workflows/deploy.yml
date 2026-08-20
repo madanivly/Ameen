@@ -34,7 +34,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: /domains/grt.madanimedia.com/public_html/
+          server-dir: /grt/
           dangerous-clean-slate: false
           exclude: |
             **/.DS_Store

@@ -1,0 +1,12 @@
+# Disable all caching for PHP responses
+<IfModule mod_headers.c>
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# Disable rewriting in this directory
+<IfModule mod_rewrite.c>
+    RewriteEngine Off
+</IfModule>

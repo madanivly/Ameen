@@ -1,4 +1,4 @@
-// Core data types for Ameen Portal
+// Core data types for GRT Portal
 
 export type Role = "member" | "admin" | "collector";
 
@@ -17,31 +17,35 @@ export interface User {
   registrationFeePaid: boolean;
   joinedAt: string; // ISO date
   nomineeName?: string; // Nominee full name
+  nomineeRelation?: string; // Relation with nominee
   nomineeAddress?: string; // Nominee address
   nomineeContact?: string; // Nominee contact number
+  shares?: number; // default to 1, multiplier for 100/mo
 }
 
 export interface Admin {
   id: string;
   name: string;
-  role: Role;
+  username?: string;
+  role: string | null;
+  mobile: string | null;
+  whatsapp: string | null;
   password?: string;
-  mobile?: string;
-  whatsapp?: string;
 }
 
-export type TransactionStatus = "held_by_collector" | "held_by_admin" | "confirmed";
+export type TransactionStatus = string;
 
 export interface Transaction {
   id: string;
   memberId: string;
   adminId?: string;
+  collectorName?: string;
   type: "registration" | "monthly";
-  amount: number; // QR
+  amount: number;
   monthKey?: string; // e.g. "2026-07" for monthly
   paidAt: string; // ISO
   receiptNo: string;
-  status: TransactionStatus;
+  status: string;
   transferredToTreasurer: boolean;
   transferBatchId?: string;
   approved?: boolean;
@@ -57,7 +61,7 @@ export interface Investment {
   id: string;
   name: string;
   description: string;
-  capitalDeployed: number; // total QR
+  capitalDeployed: number;
   profitEntries: ProfitEntry[]; // list of periodic profits
   status: "active" | "closed";
 }

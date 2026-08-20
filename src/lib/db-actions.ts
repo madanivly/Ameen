@@ -1,39 +1,41 @@
-import pool from './database';
+const API_URL = '/api/api.php';
 
 export const fetchData = async () => {
-  const connection = await pool.getConnection();
-  try {
-    const [rows] = await connection.query('SELECT * FROM your_table_name'); // Replace with your table name
-    return rows;
-  } finally {
-    connection.release();
+  const response = await fetch(`${API_URL}?endpoint=fetch-data`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch data');
   }
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || 'API returned an error');
+  }
+  return result.data;
 };
 
-export const updateData = async (id: number, data: any) => {
-  const connection = await pool.getConnection();
-  try {
-    // Example update query, adjust as needed
-    const [result] = await connection.query('UPDATE your_table_name SET ? WHERE id = ?', [data, id]);
-    return result;
-  } finally {
-    connection.release();
+export const updateData = async (payload: any) => {
+  const response = await fetch(`${API_URL}?endpoint=update-data`, {
+    method: payload.action === 'delete' ? 'DELETE' : 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("API Error Response:", errorText);
+    throw new Error(`Failed to update data: ${errorText}`);
   }
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || 'API returned an error');
+  }
+  return result.data;
 };
 
 export const batchUpdate = async (data: any[]) => {
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
-        for (const item of data) {
-            const { id, ...updateData } = item;
-            await connection.query('UPDATE your_table_name SET ? WHERE id = ?', [updateData, id]);
-        }
-        await connection.commit();
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+  // This is a simple implementation. For a real batch update,
+  // the mock server would need to support a batch endpoint.
+  for (const item of data) {
+    await updateData(item);
+  }
 };

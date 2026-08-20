@@ -3,10 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -74,13 +71,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Ameen Portal — Community Investment Fund" },
+      { title: "GRT Portal — Community Investment Fund" },
       {
         name: "description",
         content:
-          "Manage monthly community contributions, admin ledgers, and business investment profit shares — all in QR.",
+          "Manage monthly community contributions, admin ledgers, and business investment profit shares.",
       },
-      { property: "og:title", content: "Ameen Portal" },
+      { property: "og:title", content: "GRT Portal" },
       {
         property: "og:description",
         content: "Transparent community investment fund management.",
@@ -96,25 +93,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();

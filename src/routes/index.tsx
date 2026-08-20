@@ -10,13 +10,13 @@ import { Toaster } from "@/components/ui/sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Ameen Portal — Community Investment Fund" },
+      { title: "GRT Portal — Community Investment Fund" },
       {
         name: "description",
         content:
-          "Transparent management of monthly community contributions, admin ledgers, and business investment profit shares — in QR.",
+          "Transparent management of monthly community contributions, admin ledgers, and business investment profit shares.",
       },
-      { property: "og:title", content: "Ameen Portal — Community Investment Fund" },
+      { property: "og:title", content: "GRT Portal — Community Investment Fund" },
       {
         property: "og:description",
         content:
@@ -40,18 +40,40 @@ function Index() {
 function Screen() {
   const { state, currentMember, currentAdmin } = useAppState();
   if (!state.currentUserId) return <Login />;
-  
-  // Collector logic: Show both dashboards if user has collector role
-  if (state.currentRole === "collector") {
-    return (
-      <div className="space-y-8">
-        <AdminDashboard />
-        <MemberDashboard />
-      </div>
+
+  const m = currentMember();
+  const a = currentAdmin();
+  const loggedInName = a?.name ?? m?.name ?? "";
+
+  const isAdmin = a?.role === "admin" || state.currentUserId.toLowerCase() === "admin";
+  const isCollector =
+    a?.role === "collector" ||
+    m?.isCollector ||
+    m?.role === "collector" ||
+    state.admins.some(
+      (adm) =>
+        adm.role === "collector" &&
+        (adm.id === state.currentUserId ||
+          (loggedInName &&
+            adm.name.trim().toLowerCase() === loggedInName.trim().toLowerCase()))
     );
+
+  if (state.currentRole === "admin" && isAdmin) {
+    return <AdminDashboard />;
   }
 
-  if (state.currentRole === "admin" && currentAdmin()) return <AdminDashboard />;
-  if (currentMember()) return <MemberDashboard />;
-  return <Login />;
+  if (state.currentRole === "collector" && (isCollector || isAdmin)) {
+    return <CollectorDashboard />;
+  }
+
+  if (state.currentRole === "member" || m) {
+    return <MemberDashboard />;
+  }
+
+  if (a) {
+    return a.role === "admin" ? <AdminDashboard /> : <CollectorDashboard />;
+  }
+
+  // Fallback default to member view if role is null/missing or state is unhandled
+  return <MemberDashboard />;
 }
