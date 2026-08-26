@@ -1,4 +1,10 @@
 <IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^grt\.madanimedia\.com$ [NC]
+RewriteRule ^(.*)$ https://grtapp.in/$1 [R=301,L]
+</IfModule>
+
+<IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
   RewriteRule ^api/ - [L]
@@ -6,4 +12,29 @@
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
 </IfModule>
+
+# PWA & Cache Control Headers
+<IfModule mod_headers.c>
+  Header set Clear-Site-Data "\"cache\", \"storage\"" "expr=%{HTTP_HOST} == 'grt.madanimedia.com'"
+
+  # 1. Prevent HTML caching completely (HTML files, manifest, sw)
+  <FilesMatch "\.(html|htm|json)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "^(sw\.js)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # 2. Cache hashed static assets safely with immutable header
+  <FilesMatch "\.(js|css|webp|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+
 

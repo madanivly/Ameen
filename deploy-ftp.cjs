@@ -1,14 +1,14 @@
 /**
- * Ameen – Automated FTP deploy script for grt.madanimedia.com
+ * Ameen – Automated FTP deploy script for grtapp.in
  */
 
 const { Client } = require("basic-ftp");
 const path = require("path");
 const fs = require("fs");
 
-const FTP_HOST = process.env.FTP_HOST || "ftp.madanimedia.com";
-const FTP_USER = process.env.FTP_USER || "grt@grt.madanimedia.com";
-const FTP_PASSWORD = process.env.FTP_PASSWORD || process.env.FTP_PASS || "r4ytvd93fn";
+const FTP_HOST = process.env.FTP_HOST || "ftp.grtapp.in";
+const FTP_USER = process.env.FTP_USER || "grtapp@grtapp.in";
+const FTP_PASSWORD = process.env.FTP_PASSWORD || process.env.FTP_PASS || "07yhhwrz52";
 const FTP_PORT = parseInt(process.env.FTP_PORT || "21", 10);
 const FTP_SECURE = (process.env.FTP_SECURE || "false").toLowerCase() !== "false";
 
@@ -86,11 +86,11 @@ async function deployToDirectory(client, remoteDir) {
 
 async function deploy() {
   console.log("========================================");
-  console.log(" Starting Automated FTP Deployment for grt.madanimedia.com");
+  console.log(" Starting Automated FTP Deployment for grtapp.in");
   console.log(" Host:", FTP_HOST);
   console.log(" User:", FTP_USER);
   console.log(" Port:", FTP_PORT);
-  console.log(" Secure:", FTP_SECURE);
+  console.log(" Target: / (root)");
   console.log("========================================\n");
 
   if (!fs.existsSync(DIST_DIR)) {
@@ -112,24 +112,13 @@ async function deploy() {
     });
     console.log("✅ Connected successfully.\n");
 
-    console.log("🔍 Inspecting remote directory structure...");
-    let rootList = [];
-    try {
-      rootList = await client.list("/");
-      console.log("  Remote '/' contents:", rootList.map(i => (i.isDirectory ? "📁 " : "📄 ") + i.name));
-    } catch (e) {
-      console.log("  Could not list root directory:", e.message);
-    }
-
-    // Target subdomain folder: deploy to root '/' and '/grt' to cover all server configurations
-    console.log(`🎯 Deploying to root '/'`);
+    // Target folder: deploy to root '/' for domain grtapp.in
+    console.log(`🎯 Deploying to root folder '/'`);
     await deployToDirectory(client, "/");
-    console.log(`🎯 Deploying to subdomain '/grt'`);
-    await deployToDirectory(client, "/grt");
 
-    console.log(`\n--- Verifying Target Directory Contents ---`);
+    console.log(`\n--- Verifying / Contents ---`);
     try {
-      const finalList = await client.list("/grt");
+      const finalList = await client.list("/");
       for (const item of finalList) {
         console.log(`  ${item.type === 2 ? "📁" : "📄"} ${item.name}`);
       }
@@ -158,6 +147,8 @@ async function deploy() {
 }
 
 deploy();
+
+
 
 
 

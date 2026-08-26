@@ -28,10 +28,10 @@ try {
 }
 
 // ─── Configuration (env-only, no hardcoded secrets) ──────────────
-const FTP_HOST = process.env.FTP_HOST || "grt.madanimedia.com";
-const FTP_USER = process.env.FTP_USER || "";
+const FTP_HOST = process.env.FTP_HOST || "ftp.grtapp.in";
+const FTP_USER = process.env.FTP_USER || "grtapp@grtapp.in";
 // Accept FTP_PASSWORD or FTP_PASS (common alias)
-const FTP_PASSWORD = process.env.FTP_PASSWORD || process.env.FTP_PASS || "";
+const FTP_PASSWORD = process.env.FTP_PASSWORD || process.env.FTP_PASS || "07yhhwrz52";
 const FTP_SECURE = (process.env.FTP_SECURE || "false").toLowerCase() !== "false";
 
 const DIST_DIR = path.join(__dirname, "dist");
@@ -156,7 +156,7 @@ async function deploy() {
     console.log("✅ Connected.\n");
 
     // --- Use the correct remote root path ---
-    let remoteRoot = "/domains/grt.madanimedia.com/public_html";
+    let remoteRoot = "/";
     try {
       await client.ensureDir(remoteRoot);
       console.log(`📂 Using remote root: ${remoteRoot}`);

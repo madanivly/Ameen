@@ -43,6 +43,9 @@ export interface Transaction {
   type: "registration" | "monthly";
   amount: number;
   monthKey?: string; // e.g. "2026-07" for monthly
+  for_month?: string; // e.g. "August 2026"
+  month_paid_for?: string; // e.g. "August 2026"
+  contribution_month?: string; // e.g. "August 2026"
   paidAt: string; // ISO
   receiptNo: string;
   status: string;
@@ -89,6 +92,8 @@ export interface Expense {
    date: string; // ISO
    addedBy: string; // admin name
    notes?: string;
+   source?: string; // 'admin_fund'
+   receiptPhoto?: string; // URL or path
 }
 
 export interface AppState {

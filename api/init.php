@@ -102,6 +102,9 @@ function ensureTablesExist(PDO $pdo): void {
           `date` varchar(255) DEFAULT NULL,
           `category` varchar(255) DEFAULT NULL,
           `addedBy` varchar(255) DEFAULT NULL,
+          `notes` text DEFAULT NULL,
+          `source` varchar(255) DEFAULT 'official',
+          `receiptPhoto` varchar(255) DEFAULT NULL,
           PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
 

@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      if (window.location.hostname === 'grt.madanimedia.com') {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(function(names) {
+            for (let name of names) {
+              caches.delete(name);
+            }
+          });
+        }
+        setTimeout(function() {
+          window.location.replace('https://grtapp.in' + window.location.pathname + window.location.search);
+        }, 100);
+      }
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
@@ -62,14 +83,14 @@
     <meta property="og:title" content="GRT – Grow Rich Together" />
     <meta property="og:description" content="Manage monthly community contributions, admin ledgers, and business investment profit shares." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://grt.madanimedia.com" />
-    <meta property="og:image" content="https://grt.madanimedia.com/logo.png" />
+    <meta property="og:url" content="https://grtapp.in" />
+    <meta property="og:image" content="https://grtapp.in/logo.png" />
     <meta property="og:site_name" content="GRT Portal" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="GRT – Grow Rich Together" />
-    <meta name="twitter:image" content="https://grt.madanimedia.com/logo.png" />
+    <meta name="twitter:image" content="https://grtapp.in/logo.png" />
 
     <!-- No-cache for HTML -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />

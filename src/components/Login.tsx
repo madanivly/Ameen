@@ -616,7 +616,7 @@ export function Login() {
                       required 
                     />
                     <label htmlFor="termsCheckbox" className="text-xs text-slate-600 leading-tight">
-                      I have read and agree to the <a href="https://grt.madanimedia.com/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Terms and Conditions</a>.
+                      I have read and agree to the <a href="https://grtapp.in/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Terms and Conditions</a>.
                     </label>
                   </div>
                   

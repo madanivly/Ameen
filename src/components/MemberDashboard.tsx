@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { fmt, fmtDate, fmtMonthKey } from "@/lib/format";
+import { fmt, fmtDate, fmtMonthKey, getProfilePhotoUrl } from "@/lib/format";
 import { PublicAnalytics } from "./PublicAnalytics";
 import { AlertTriangle, Lock, TrendingUp, Wallet, Briefcase } from "lucide-react";
 import { toast } from "sonner";
@@ -144,7 +144,7 @@ export function MemberDashboard() {
         <Card className="mb-6 p-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                  {m.profilePhoto ? <img src={m.profilePhoto} alt="Profile" className="w-20 h-20 rounded-full object-cover" /> : <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">No Photo</div>}
+                  {m.profilePhoto ? <img src={getProfilePhotoUrl(m.profilePhoto)} alt="Profile" className="w-20 h-20 rounded-full object-cover" /> : <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">No Photo</div>}
                   <div>
                       <h3 className="text-xl font-bold">{m.name}</h3>
                       <p className="text-slate-600 font-mono text-sm">ID: {m.memberId}</p>
@@ -524,14 +524,16 @@ export function MemberDashboard() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {t.monthKey
-                      ? (() => {
-                          const [yr, mo] = t.monthKey.split('-');
-                          const monthName = new Date(Number(yr), Number(mo) - 1, 1)
-                            .toLocaleDateString('en-US', { month: 'long' });
-                          return `${yr} / ${monthName}`;
-                        })()
-                      : '—'}
+                    <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
+                      {t.for_month || t.month_paid_for || (t.monthKey
+                        ? (() => {
+                            const [yr, mo] = t.monthKey.split('-');
+                            const monthName = new Date(Number(yr), Number(mo) - 1, 1)
+                              .toLocaleDateString('en-US', { month: 'long' });
+                            return `${monthName} ${yr}`;
+                          })()
+                        : '—')}
+                    </Badge>
                   </TableCell>
                   <TableCell>{fmtDate(t.paidAt)}</TableCell>
                   <TableCell className="text-right font-semibold">

@@ -6,7 +6,7 @@ import { Coins, TrendingUp, Wallet, PieChart } from "lucide-react";
 export function PublicAnalytics() {
   const { totals, state, memberMonthlyPaid } = useAppState();
   const t = totals();
-  const totalExpenses = state.expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalExpenses = state.expenses.filter(e => e.source !== 'admin_fund').reduce((sum, e) => sum + Number(e.amount || 0), 0);
   const netBalance = t.balance - totalExpenses;
   const collectedTransactionCount = state.transactions.filter((transaction) => {
     const status = (transaction.status || "").trim().toLowerCase();
@@ -54,7 +54,7 @@ export function PublicAnalytics() {
           icon={<Wallet className="h-4 w-4" />}
           label="Total Expenses"
           value={fmt(totalExpenses)}
-          hint={`${state.expenses.length} official expenses`}
+          hint={`${state.expenses.filter(e => e.source !== 'admin_fund').length} official expenses`}
         />
         <StatCard
           icon={<Wallet className="h-4 w-4" />}

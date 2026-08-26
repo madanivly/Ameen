@@ -1,3 +1,9 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^grt\.madanimedia\.com$ [NC]
+RewriteRule ^(.*)$ https://grtapp.in/$1 [R=301,L]
+</IfModule>
+
 # Disable LiteSpeed Anti-Bot Verification / CAPTCHA for Social Scrapers
 <IfModule LiteSpeed>
     RewriteEngine On
@@ -43,6 +49,7 @@ SetEnv DB_NAME madanime_ameen
 <FilesMatch "\.(html|htm)$">
     FileETag None
     <IfModule mod_headers.c>
+        Header set Clear-Site-Data "\"cache\", \"storage\"" "expr=%{HTTP_HOST} == 'grt.madanimedia.com'"
         Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
         Header set Pragma "no-cache"
         Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"

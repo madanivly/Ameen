@@ -55,6 +55,7 @@ interface AppStateContextValue {
   currentAdmin: () => Admin | null;
   logPayment: (input: { memberId: string; adminId: string; type: "registration" | "monthly"; monthKey?: string; amount?: number; }) => Transaction;
   updatePaymentAmount: (transactionId: string, amount: number) => void;
+  updatePaymentMonth: (transactionId: string, monthKey: string) => Promise<boolean>;
   markTransferredToTreasurer: (adminId: string) => TreasurerTransfer | null;
   approvePayment: (transactionId: string, newAmount?: number) => void;
   rejectPayment: (transactionId: string) => void;
@@ -69,6 +70,7 @@ interface AppStateContextValue {
   addCollector: (collector: string | { name: string; mobile: string; whatsapp: string }) => void;
   removeCollector: (id: string) => void;
   addExpense: (expense: { description: string; amount: number; category: string; notes?: string }) => void;
+  addAdminExpense: (expense: { description: string; amount: number; category: string; notes?: string; receiptPhoto?: string }) => void;
   deleteExpense: (expenseId: string) => void;
   addInvestment: (investment: { name: string; description: string; capitalDeployed: number; }) => void;
   updateInvestment: (id: string, investment: Investment) => void;
@@ -510,6 +512,69 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }).catch((error) => console.error("Failed to sync payment amount:", error));
     };
 
+    const updatePaymentMonth = async (transactionId: string, newMonthKey: string): Promise<boolean> => {
+      const transaction = state.transactions.find((t) => t.id === transactionId || t.receiptNo === transactionId);
+      if (!transaction) return false;
+
+      let monthDisplay = newMonthKey;
+      if (newMonthKey && newMonthKey !== 'N/A') {
+        const parts = newMonthKey.split('-');
+        if (parts.length === 2) {
+          const yr = parseInt(parts[0], 10);
+          const mo = parseInt(parts[1], 10);
+          if (yr > 0 && mo >= 1 && mo <= 12) {
+            const dt = new Date(yr, mo - 1, 1);
+            monthDisplay = dt.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+          }
+        }
+      }
+
+      const updatedTx = {
+        ...transaction,
+        monthKey: newMonthKey,
+        for_month: monthDisplay,
+        month_paid_for: monthDisplay,
+        contribution_month: monthDisplay,
+      };
+
+      setState((s) => ({
+        ...s,
+        transactions: s.transactions.map((t) => (t.id === transaction.id ? updatedTx : t)),
+      }));
+
+      try {
+        await fetch('/api/transactions.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            receipt_id: transaction.id,
+            id: transaction.id,
+            monthKey: newMonthKey,
+          }),
+        });
+
+        await fetch('/api/api.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: 'update-receipt-month',
+            receipt_id: transaction.id,
+            id: transaction.id,
+            monthKey: newMonthKey,
+            for_month: monthDisplay,
+            month_paid_for: monthDisplay,
+            type: 'transaction',
+          }),
+        });
+
+        await fetchData();
+        return true;
+      } catch (error) {
+        console.error("Failed to update payment month:", error);
+        return false;
+      }
+    };
+
     const rejectPayment = (transactionId: string) => {
       fetch('/api/api.php', {
         method: 'POST',
@@ -775,6 +840,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         date: new Date().toISOString(),
         addedBy: currentAdmin?.name || "Unknown",
         notes: expense.notes,
+        source: "official",
       };
       
       fetch('/api/api.php', {
@@ -782,6 +848,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...newExpense, type: 'expense', endpoint: 'update-data' }),
       }).then(async res => { if (res.ok) await fetchData(); }).catch(e => console.error("Failed to sync expense:", e));
+    };
+
+    const addAdminExpense = (expense: { description: string; amount: number; category: string; notes?: string; receiptPhoto?: string }) => {
+      const currentAdmin = state.admins.find(a => a.id === state.currentUserId);
+      const newAdminExpense: Expense = {
+        id: rid("adexp"),
+        description: expense.description,
+        amount: expense.amount,
+        category: expense.category,
+        date: new Date().toISOString(),
+        addedBy: currentAdmin?.name || "Admin",
+        notes: expense.notes,
+        source: "admin_fund",
+        receiptPhoto: expense.receiptPhoto,
+      };
+      fetch("/api/expenses.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAdminExpense),
+      }).then(async res => { if (res.ok) await fetchData(); }).catch(e => console.error("Failed to sync admin expense:", e));
     };
 
     const deleteExpense = (expenseId: string) => {
@@ -954,7 +1040,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       resetSeed,
       approvePayment,
       rejectPayment,
+      updatePaymentMonth,
       addExpense,
+      addAdminExpense,
       deleteExpense,
       refreshData: fetchData,
     };

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PublicAnalytics } from "./PublicAnalytics";
+import { MonthlyContributionsOverviewCard } from "./MonthlyContributionsOverviewCard";
 import {
   Table,
   TableBody,
@@ -106,9 +107,16 @@ export function CollectorDashboard() {
         <div className="mb-4">
             {/* <Button variant="outline" onClick={refreshData}>Refresh Data</Button> */}
         </div>
-        <Card className="p-5 mb-6">
-            <h2 className="mb-3 font-semibold text-slate-900">
-            Pending Approvals
+
+        {/* 1. Pending Approvals (Highest Priority - Top position) */}
+        <Card className="p-5 mb-6 border-amber-200 bg-amber-50/20">
+            <h2 className="mb-3 font-semibold text-slate-900 flex items-center justify-between">
+              <span>Pending Approvals</span>
+              {pendingApprovals.length > 0 && (
+                <Badge className="bg-amber-500 text-white font-bold text-xs px-2 py-0.5">
+                  {pendingApprovals.length} Pending
+                </Badge>
+              )}
             </h2>
             {pendingApprovals.length > 0 ? (
                 <Table>
@@ -169,6 +177,13 @@ export function CollectorDashboard() {
             ) : <p className="text-sm text-slate-500">No pending approvals.</p>}
         </Card>
 
+        {/* 2. Monthly Contributions Overview & WhatsApp Tracker */}
+        <MonthlyContributionsOverviewCard
+          members={myMembers}
+          transactions={state.transactions}
+        />
+
+        {/* 2. My Registered Members */}
         <Card className="p-5 mb-6">
             <h2 className="mb-3 font-semibold text-slate-900">
             My Registered Members
@@ -258,7 +273,11 @@ export function CollectorDashboard() {
                           <div className="font-medium">{member?.name || t.memberId}</div>
                           <div className="text-xs text-slate-500 font-mono">{member?.memberId || ""}</div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{t.monthKey || "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200">
+                            {t.for_month || t.month_paid_for || (t.monthKey ? fmtMonthKey(t.monthKey) : "—")}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-xs">{fmtDateTime(t.paidAt)}</TableCell>
                         <TableCell className="text-right font-semibold">{Number(t.amount || 0).toLocaleString()}</TableCell>
                         <TableCell>

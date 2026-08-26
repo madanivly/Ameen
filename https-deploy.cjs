@@ -14,7 +14,7 @@ const fs   = require('fs');
 const path = require('path');
 const http  = require('https');
 
-const BASE_URL    = 'https://grt.madanimedia.com';
+const BASE_URL    = 'https://grtapp.in';
 const TOKEN       = 'grt_deploy_2026_xK9mPqZ7';
 const RECEIVER    = `${BASE_URL}/api/deploy_receiver.php?token=${TOKEN}`;
 const DIST_ZIP    = path.join(__dirname, 'pwa_deploy.zip');
@@ -118,7 +118,7 @@ async function deploy() {
   // ── Done ──────────────────────────────────────────────────────
   console.log('\n========================================');
   console.log(`✅ Deploy complete! ${extractJson.extracted} files live.`);
-  console.log(`🌐 https://grt.madanimedia.com`);
+  console.log(`🌐 https://grtapp.in`);
   console.log('========================================\n');
 }
 

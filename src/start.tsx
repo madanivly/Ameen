@@ -1,7 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { registerSW } from "virtual:pwa-register";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
 
@@ -23,39 +24,41 @@ declare module "@tanstack/react-router" {
   }
 }
 
-// ── Service Worker Registration ────────────────────────────────────
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
-      .then((registration) => {
-        console.log("[PWA] Service Worker registered:", registration.scope);
+// ── Global Chunk Loading Error Handler & Auto-Reload ──────────────────
+// Automatically catches dynamic import failures (e.g., when a user has an older version open and new build hashes are deployed)
+window.addEventListener("vite:preloadError", (event) => {
+  console.warn("[App] Vite preload error detected, reloading to fetch latest assets...", event);
+  window.location.reload();
+});
 
-        // Listen for SW updates and auto-reload when a new version is ready
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener("statechange", () => {
-            if (
-              newWorker.state === "installed" &&
-              navigator.serviceWorker.controller
-            ) {
-              // New content available – post a skip-waiting message
-              newWorker.postMessage({ type: "SKIP_WAITING" });
-            }
-          });
-        });
-      })
-      .catch((err) => {
-        console.warn("[PWA] Service Worker registration failed:", err);
-      });
-
-    // Reload once the new SW takes over
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      window.location.reload();
-    });
-  });
-}
+window.addEventListener("error", (event) => {
+  const msg = event.message || "";
+  if (
+    msg.includes("Failed to fetch dynamically imported module") ||
+    msg.includes("Importing a module script failed") ||
+    msg.includes("Loading chunk")
+  ) {
+    console.warn("[App] Dynamic import chunk error detected, forcing page refresh...", msg);
+    window.location.reload();
+  }
+});
+// ── Automatic Background Service Worker Registration ─────────────────
+// Auto-update ensures instant cache invalidation and reload upon deployment
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    console.log("[PWA] New version available, updated automatically.");
+  },
+  onOfflineReady() {
+    console.log("[PWA] Application ready for offline usage.");
+  },
+  onRegisteredSW(swUrl, registration) {
+    console.log("[PWA] Service Worker registered:", swUrl, registration?.scope);
+  },
+  onRegisterError(error) {
+    console.warn("[PWA] Service Worker registration failed:", error);
+  },
+});
 
 // Render the app
 const rootElement = document.getElementById("root")!;
@@ -65,3 +68,4 @@ ReactDOM.createRoot(rootElement).render(
     <RouterProvider router={router} />
   </React.StrictMode>
 );
+

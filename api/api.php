@@ -273,6 +273,28 @@ function fetchAll(PDO $pdo): array {
                     $row['type'] = !empty($row['monthKey']) ? 'monthly' : 'registration';
                 }
 
+                // Format monthKey into readable contribution_month / month_paid_for (e.g. "August 2026")
+                $row['for_month'] = null;
+                $row['month_paid_for'] = null;
+                $row['contribution_month'] = null;
+
+                if (!empty($row['monthKey']) && $row['monthKey'] !== 'N/A') {
+                    $parts = explode('-', $row['monthKey']);
+                    if (count($parts) === 2) {
+                        $yr = (int)$parts[0];
+                        $mo = (int)$parts[1];
+                        if ($yr > 0 && $mo >= 1 && $mo <= 12) {
+                            $dt = DateTime::createFromFormat('!Y-m', $row['monthKey']);
+                            if ($dt) {
+                                $formattedMonth = $dt->format('F Y'); // e.g. "August 2026"
+                                $row['for_month'] = $formattedMonth;
+                                $row['month_paid_for'] = $formattedMonth;
+                                $row['contribution_month'] = $formattedMonth;
+                            }
+                        }
+                    }
+                }
+
                 // Transactions may reference either members.id or
                 // members.memberId. Resolve both formats and expose the
                 // member-backed collector relationship to the client.
@@ -684,6 +706,44 @@ try {
         $stmt = $pdo->prepare("INSERT INTO `system_settings` (`key`, `value`) VALUES ('terms_and_conditions', ?) ON DUPLICATE KEY UPDATE `value` = ?");
         $stmt->execute([$body['value'], $body['value']]);
         echo json_encode(['success' => true]);
+
+    } elseif ($endpoint === 'update-receipt-month' || $endpoint === 'update-payment-month') {
+        $receiptId = trim((string)($body['receipt_id'] ?? $body['id'] ?? $body['transaction_id'] ?? ''));
+        $monthKey = trim((string)($body['monthKey'] ?? $body['month_key'] ?? ''));
+
+        if (empty($receiptId) || empty($monthKey)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Both receipt_id and monthKey are required.']);
+            exit();
+        }
+
+        $monthDisplay = $monthKey;
+        if ($monthKey !== 'N/A') {
+            $parts = explode('-', $monthKey);
+            if (count($parts) === 2) {
+                $yr = (int)$parts[0];
+                $mo = (int)$parts[1];
+                if ($yr > 0 && $mo >= 1 && $mo <= 12) {
+                    $dt = DateTime::createFromFormat('!Y-m', $monthKey);
+                    if ($dt) {
+                        $monthDisplay = $dt->format('F Y');
+                    }
+                }
+            }
+        }
+
+        $stmt = $pdo->prepare("UPDATE `transactions` SET `monthKey` = ?, `for_month` = ?, `month_paid_for` = ?, `contribution_month` = ? WHERE `id` = ? OR `receiptNo` = ?");
+        $stmt->execute([$monthKey, $monthDisplay, $monthDisplay, $monthDisplay, $receiptId, $receiptId]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Receipt target month updated successfully.',
+            'data' => [
+                'receipt_id' => $receiptId,
+                'monthKey' => $monthKey,
+                'for_month' => $monthDisplay,
+            ]
+        ]);
 
     } elseif ($endpoint === 'update-data') {
         if (isset($body['action']) && $body['action'] === 'clear_all') {

@@ -21,3 +21,16 @@ export const fmtMonthKey = (monthKeyStr: string) => {
   const date = new Date(parseInt(year), parseInt(month) - 1, 1);
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 };
+
+export const getProfilePhotoUrl = (photoPath?: string | null): string => {
+  if (!photoPath) return '';
+  const trimmed = photoPath.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('data:') || trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  // Prepend API/Site origin base path
+  const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return `https://grtapp.in${normalizedPath}`;
+};
+

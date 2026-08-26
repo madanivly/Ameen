@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { fmt, fmtDate } from "@/lib/format";
+import { fmt, fmtDate, getProfilePhotoUrl } from "@/lib/format";
 
 interface MemberProfilePrintProps {
   member: any;
@@ -74,7 +74,7 @@ export function MemberProfilePrint({ member: m, transactions }: MemberProfilePri
         {/* Photo */}
         {m.profilePhoto ? (
           <img
-            src={m.profilePhoto}
+            src={getProfilePhotoUrl(m.profilePhoto)}
             alt="Profile"
             style={{
               width: 80, height: 80,

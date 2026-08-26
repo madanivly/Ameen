@@ -1,17 +1,17 @@
 /**
- * ftp-deploy.cjs  — direct FTP upload of dist/ to grt.madanimedia.com
- * The real public_html for grt.madanimedia.com is /grt/ on this FTP server.
+ * ftp-deploy.cjs  — direct FTP upload of dist/ to grtapp.in
+ * The real public_html for grtapp.in is / on this FTP server.
  * Uses basic-ftp (already in node_modules)
  */
 const ftp  = require('basic-ftp');
 const fs   = require('fs');
 const path = require('path');
 
-const HOST     = 'ftp.us.stackcp.com';
-const USER     = 'grt@grt.madanimedia.com';
-const PASSWORD = 'r4ytvd93fn';
+const HOST     = process.env.FTP_HOST || 'ftp.grtapp.in';
+const USER     = process.env.FTP_USER || 'grtapp@grtapp.in';
+const PASSWORD = process.env.FTP_PASSWORD || process.env.FTP_PASS || '07yhhwrz52';
 const DIST     = path.resolve(__dirname, 'dist');
-const REMOTE   = '/grt';   // actual public_html for grt.madanimedia.com
+const REMOTE   = '/';   // actual public_html / document root for grtapp.in dedicated FTP user
 
 // Skip macOS junk; keep api/ untouched on server (already live)
 const SKIP_NAMES_RE = /^Icon[\r\n]?$|^\.DS_Store$/;
@@ -57,12 +57,12 @@ async function uploadDir(client, localDir, remoteDir) {
     });
 
     console.log('✅  Logged in as', USER);
-    console.log(`📂  Deploying dist/ → /grt/ (grt.madanimedia.com public_html)\n`);
+    console.log(`📂  Deploying dist/ → / (grtapp.in public_html)\n`);
 
     await uploadDir(client, DIST, REMOTE);
 
     console.log('\n✅  Deploy complete!');
-    console.log('🌐  https://grt.madanimedia.com\n');
+    console.log('🌐  https://grtapp.in\n');
 
   } catch (err) {
     console.error('\n❌  FTP error:', err.message);
