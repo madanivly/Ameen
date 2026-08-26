@@ -1,4 +1,4 @@
-import { useAppState, monthKey, REG_FEE } from "@/context/AppStateContext";
+import { useAppState, monthKey } from "@/context/AppStateContext";
 import { AppShell } from "./AppShell";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -2449,8 +2449,8 @@ export function AdminDashboard() {
       {/* ── Administrative Fund Card (Admin-only, hidden from public) ── */}
       {a.role === "admin" && (() => {
         const activeMembers = state.members.filter(m => ((m as any).status !== 'deleted') && (m.role !== 'admin'));
-        const activeMemberCount = activeMembers.length;
-        const registrationFund = activeMemberCount * REG_FEE;
+        const totalActiveShares = activeMembers.reduce((sum, m) => sum + Number(m.shares || 1), 0);
+        const registrationFund = totalActiveShares * 10;
         const adminExpenses = state.expenses.filter(e => e.source === 'admin_fund');
         const totalAdminExpenses = adminExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
         const netAdminBalance = registrationFund - totalAdminExpenses;
@@ -2504,17 +2504,17 @@ export function AdminDashboard() {
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="rounded-lg border border-purple-200 bg-white p-3 text-center">
                 <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Total Registration Fund Collected</div>
-                <div className="text-xl font-bold text-purple-800">{fmt(registrationFund)}</div>
-                <div className="text-xs text-slate-500 mt-0.5">{activeMemberCount} active members × ₹{REG_FEE}</div>
+                <div className="text-xl font-bold text-purple-800">{registrationFund}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{totalActiveShares} active shares × 10</div>
               </div>
               <div className="rounded-lg border border-purple-200 bg-white p-3 text-center">
                 <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Total Admin Expenses</div>
-                <div className="text-xl font-bold text-red-700">{fmt(totalAdminExpenses)}</div>
+                <div className="text-xl font-bold text-red-700">{totalAdminExpenses}</div>
                 <div className="text-xs text-slate-500 mt-0.5">{adminExpenses.length} expense{adminExpenses.length !== 1 ? 's' : ''} logged</div>
               </div>
               <div className="rounded-lg border border-purple-200 bg-white p-3 text-center">
-                <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Available Administrative Balance</div>
-                <div className={`text-xl font-bold ${netAdminBalance >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{fmt(netAdminBalance)}</div>
+                <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Net Administrative Balance</div>
+                <div className={`text-xl font-bold ${netAdminBalance >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{netAdminBalance}</div>
                 <div className="text-xs text-slate-500 mt-0.5">Registration fund − admin expenses</div>
               </div>
             </div>
@@ -2547,7 +2547,7 @@ export function AdminDashboard() {
                             </a>
                           ) : <span className="text-xs text-slate-400">None</span>}
                         </TableCell>
-                        <TableCell className="text-right font-semibold text-red-700">{fmt(exp.amount)}</TableCell>
+                        <TableCell className="text-right font-semibold text-red-700">{exp.amount}</TableCell>
                         <TableCell>
                           <Button size="sm" variant="destructive" onClick={() => { deleteExpense(exp.id); toast.success("Admin expense deleted"); }}>
                             <Trash2 className="h-3.5 w-3.5" />
@@ -2584,7 +2584,7 @@ export function AdminDashboard() {
                       </select>
                     </div>
                     <div>
-                      <Label>Amount (₹)</Label>
+                      <Label>Amount</Label>
                       <Input type="number" min="0" step="0.01" value={adminExpenseForm.amount} onChange={e => setAdminExpenseForm({ ...adminExpenseForm, amount: e.target.value })} placeholder="0" required />
                     </div>
                   </div>
