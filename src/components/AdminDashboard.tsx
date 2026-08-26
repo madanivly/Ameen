@@ -110,7 +110,7 @@ export function AdminDashboard() {
   const [expensesOpen, setExpensesOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ description: "", amount: "", category: "Operations", notes: "" });
   const [adminExpenseOpen, setAdminExpenseOpen] = useState(false);
-  const [adminExpenseForm, setAdminExpenseForm] = useState({ description: "", amount: "", category: "Administrative", notes: "" });
+  const [adminExpenseForm, setAdminExpenseForm] = useState({ description: "", amount: "", category: "Administrative", notes: "", date: new Date().toISOString().slice(0, 10) });
   const [adminExpenseReceiptFile, setAdminExpenseReceiptFile] = useState<File | null>(null);
   const [adminExpenseUploading, setAdminExpenseUploading] = useState(false);
   const [newAdminPassword, setNewAdminPassword] = useState("");
@@ -633,7 +633,7 @@ export function AdminDashboard() {
     const totalShares = activeMembers.reduce((sum, m) => sum + Number(m.shares || 1), 0);
     const monthlyTarget = totalShares * 100;
     const t = totals();
-    const totalExpenses = (state.expenses || []).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const totalExpenses = (state.expenses || []).filter(e => e.source !== 'admin_fund').reduce((sum, e) => sum + Number(e.amount || 0), 0);
     const activeCollectors = state.admins.filter(adm => adm.role === 'collector').length + activeMembers.filter(m => m.isCollector || m.role === 'collector').length;
 
     return [
@@ -2205,7 +2205,7 @@ export function AdminDashboard() {
               Admin: Manage Official Expenses
             </div>
             <div className="space-y-3">
-              {state.expenses.length > 0 && (
+              {state.expenses.filter(e => e.source !== 'admin_fund').length > 0 && (
                 <div className="mb-4">
                   <div className="text-xs font-semibold text-amber-900 mb-2">Recent Expenses</div>
                   <Table>
@@ -2220,7 +2220,7 @@ export function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {state.expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((exp) => (
+                      {state.expenses.filter(e => e.source !== 'admin_fund').sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((exp) => (
                         <TableRow key={exp.id}>
                           <TableCell>{exp.description}</TableCell>
                           <TableCell>{exp.category}</TableCell>
@@ -2244,7 +2244,7 @@ export function AdminDashboard() {
                     </TableBody>
                   </Table>
                   <div className="mt-3 text-right font-bold text-amber-900">
-                    Total Expenses: {fmt(state.expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0))}
+                    Total Expenses: {fmt(state.expenses.filter(e => e.source !== 'admin_fund').reduce((sum, e) => sum + Number(e.amount || 0), 0))}
                   </div>
                 </div>
               )}
@@ -2400,9 +2400,10 @@ export function AdminDashboard() {
             amount: parseFloat(adminExpenseForm.amount),
             category: adminExpenseForm.category,
             notes: adminExpenseForm.notes,
+            date: adminExpenseForm.date,
             receiptPhoto: receiptUrl,
           });
-          setAdminExpenseForm({ description: "", amount: "", category: "Administrative", notes: "" });
+          setAdminExpenseForm({ description: "", amount: "", category: "Administrative", notes: "", date: new Date().toISOString().slice(0, 10) });
           setAdminExpenseReceiptFile(null);
           setAdminExpenseUploading(false);
           setAdminExpenseOpen(false);
@@ -2415,29 +2416,29 @@ export function AdminDashboard() {
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-purple-700" />
                 <div className="text-sm font-bold uppercase tracking-wide text-purple-800">
-                  Administrative Fund
-                  <span className="ml-2 text-xs font-normal text-purple-500 normal-case">(Admin-only)</span>
+                  Administrative Fund & Expense Management
+                  <span className="ml-2 text-xs font-normal text-purple-600 normal-case">(Admin-only · Private)</span>
                 </div>
               </div>
               <Button size="sm" className="bg-purple-700 hover:bg-purple-800 text-white flex gap-1.5 items-center" onClick={() => setAdminExpenseOpen(true)}>
-                <Plus className="h-3.5 w-3.5" /> Add Expense
+                <Plus className="h-3.5 w-3.5" /> Add Admin Expense
               </Button>
             </div>
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="rounded-lg border border-purple-200 bg-white p-3 text-center">
-                <div className="text-xs text-purple-500 uppercase tracking-wide mb-1">Registration Fund</div>
+                <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Total Registration Fund Collected</div>
                 <div className="text-xl font-bold text-purple-800">{fmt(registrationFund)}</div>
-                <div className="text-xs text-slate-400 mt-0.5">{activeMemberCount} active members x Rs.{REG_FEE}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{activeMemberCount} active members × ₹{REG_FEE}</div>
               </div>
               <div className="rounded-lg border border-purple-200 bg-white p-3 text-center">
-                <div className="text-xs text-purple-500 uppercase tracking-wide mb-1">Admin Expenses</div>
+                <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Total Admin Expenses</div>
                 <div className="text-xl font-bold text-red-700">{fmt(totalAdminExpenses)}</div>
-                <div className="text-xs text-slate-400 mt-0.5">{adminExpenses.length} expense{adminExpenses.length !== 1 ? 's' : ''}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{adminExpenses.length} expense{adminExpenses.length !== 1 ? 's' : ''} logged</div>
               </div>
               <div className="rounded-lg border border-purple-200 bg-white p-3 text-center">
-                <div className="text-xs text-purple-500 uppercase tracking-wide mb-1">Net Admin Balance</div>
+                <div className="text-xs text-purple-600 uppercase tracking-wide mb-1 font-semibold">Available Administrative Balance</div>
                 <div className={`text-xl font-bold ${netAdminBalance >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>{fmt(netAdminBalance)}</div>
-                <div className="text-xs text-slate-400 mt-0.5">After all admin expenses</div>
+                <div className="text-xs text-slate-500 mt-0.5">Registration fund − admin expenses</div>
               </div>
             </div>
             {adminExpenses.length > 0 && (
@@ -2490,7 +2491,7 @@ export function AdminDashboard() {
                 </DialogHeader>
                 <form onSubmit={handleAdminExpenseSubmit} className="grid gap-3">
                   <div>
-                    <Label>Description</Label>
+                    <Label>Description / Title</Label>
                     <Input value={adminExpenseForm.description} onChange={e => setAdminExpenseForm({ ...adminExpenseForm, description: e.target.value })} placeholder="e.g., Print materials, Meeting hall booking" required />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -2506,16 +2507,20 @@ export function AdminDashboard() {
                       </select>
                     </div>
                     <div>
-                      <Label>Amount (Rs.)</Label>
+                      <Label>Amount (₹)</Label>
                       <Input type="number" min="0" step="0.01" value={adminExpenseForm.amount} onChange={e => setAdminExpenseForm({ ...adminExpenseForm, amount: e.target.value })} placeholder="0" required />
                     </div>
+                  </div>
+                  <div>
+                    <Label>Expense Date</Label>
+                    <Input type="date" value={adminExpenseForm.date} onChange={e => setAdminExpenseForm({ ...adminExpenseForm, date: e.target.value })} required />
                   </div>
                   <div>
                     <Label>Notes (Optional)</Label>
                     <Input value={adminExpenseForm.notes} onChange={e => setAdminExpenseForm({ ...adminExpenseForm, notes: e.target.value })} placeholder="Additional details..." />
                   </div>
                   <div>
-                    <Label>Receipt / Invoice Photo (Optional)</Label>
+                    <Label>Receipt / Invoice / Bill Photo (Optional)</Label>
                     <input type="file" accept="image/*,application/pdf" className="w-full border rounded p-2 text-sm" onChange={e => setAdminExpenseReceiptFile(e.target.files?.[0] ?? null)} />
                     {adminExpenseReceiptFile && <div className="text-xs text-slate-500 mt-1">{adminExpenseReceiptFile.name}</div>}
                   </div>

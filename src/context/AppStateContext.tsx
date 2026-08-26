@@ -70,7 +70,7 @@ interface AppStateContextValue {
   addCollector: (collector: string | { name: string; mobile: string; whatsapp: string }) => void;
   removeCollector: (id: string) => void;
   addExpense: (expense: { description: string; amount: number; category: string; notes?: string }) => void;
-  addAdminExpense: (expense: { description: string; amount: number; category: string; notes?: string; receiptPhoto?: string }) => void;
+  addAdminExpense: (expense: { description: string; amount: number; category: string; notes?: string; date?: string; receiptPhoto?: string }) => void;
   deleteExpense: (expenseId: string) => void;
   addInvestment: (investment: { name: string; description: string; capitalDeployed: number; }) => void;
   updateInvestment: (id: string, investment: Investment) => void;
@@ -850,14 +850,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }).then(async res => { if (res.ok) await fetchData(); }).catch(e => console.error("Failed to sync expense:", e));
     };
 
-    const addAdminExpense = (expense: { description: string; amount: number; category: string; notes?: string; receiptPhoto?: string }) => {
+    const addAdminExpense = (expense: { description: string; amount: number; category: string; notes?: string; date?: string; receiptPhoto?: string }) => {
       const currentAdmin = state.admins.find(a => a.id === state.currentUserId);
       const newAdminExpense: Expense = {
         id: rid("adexp"),
         description: expense.description,
         amount: expense.amount,
         category: expense.category,
-        date: new Date().toISOString(),
+        date: expense.date ? new Date(expense.date).toISOString() : new Date().toISOString(),
         addedBy: currentAdmin?.name || "Admin",
         notes: expense.notes,
         source: "admin_fund",
