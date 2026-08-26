@@ -44,10 +44,11 @@ window.addEventListener("error", (event) => {
 });
 // ── Automatic Background Service Worker Registration ─────────────────
 // Auto-update ensures instant cache invalidation and reload upon deployment
-registerSW({
+const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    console.log("[PWA] New version available, updated automatically.");
+    console.log("[PWA] New version available, updating automatically...");
+    updateSW(true);
   },
   onOfflineReady() {
     console.log("[PWA] Application ready for offline usage.");
