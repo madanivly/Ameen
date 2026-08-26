@@ -951,6 +951,83 @@ export function AdminDashboard() {
             }
           });
         });
+
+        // ─── Append Styled GRAND TOTAL Row ───
+        const totalSharesExcel = matrixData.reduce((sum, r) => sum + (Number(r["Shares"]) || 0), 0);
+        const totalPledgeExcel = matrixData.reduce((sum, r) => sum + (Number(r["Monthly Pledge (₹)"]) || 0), 0);
+        const totalDueExcel = matrixData.reduce((sum, r) => sum + (Number(r["Total Due (₹)"]) || 0), 0);
+        const totalPaidExcel = matrixData.reduce((sum, r) => sum + (Number(r["Total Paid (₹)"]) || 0), 0);
+
+        const grandTotalRowObj: Record<string, any> = {
+          "S.No": "",
+          "Member Name": "GRAND TOTAL",
+          "Member ID": "",
+          "Collector": `${activeMembers.length} Members`,
+          "Shares": totalSharesExcel,
+          "Monthly Pledge (₹)": totalPledgeExcel,
+        };
+
+        matrixKeys.forEach((k) => {
+          if (
+            k !== "S.No" &&
+            k !== "Member Name" &&
+            k !== "Member ID" &&
+            k !== "Collector" &&
+            k !== "Shares" &&
+            k !== "Monthly Pledge (₹)" &&
+            k !== "Total Due (₹)" &&
+            k !== "Total Paid (₹)" &&
+            k !== "Status"
+          ) {
+            let colPaidSum = 0;
+            let colPaidCount = 0;
+            matrixData.forEach((r) => {
+              const val = String(r[k] || '');
+              const match = val.match(/₹([\d,]+)/);
+              if ((val.startsWith("Paid (") || val.startsWith("Advance Paid (")) && match) {
+                colPaidSum += Number(match[1].replace(/,/g, '')) || 0;
+                colPaidCount++;
+              }
+            });
+            grandTotalRowObj[k] = `₹${colPaidSum.toLocaleString()} (${colPaidCount}/${activeMembers.length})`;
+          }
+        });
+
+        grandTotalRowObj["Total Due (₹)"] = totalDueExcel;
+        grandTotalRowObj["Total Paid (₹)"] = totalPaidExcel;
+        grandTotalRowObj["Status"] = "GRAND TOTAL SUMMARY";
+
+        const grandTotalRowValues = matrixKeys.map(k => grandTotalRowObj[k]);
+        const gRow = matrixSheet.addRow(grandTotalRowValues);
+        gRow.height = 26;
+
+        const grandTotalBorder: Partial<ExcelJS.Borders> = {
+          top: { style: 'thin', color: { argb: 'FF0F172A' } },
+          bottom: { style: 'double', color: { argb: 'FF0F172A' } },
+          left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+          right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+        };
+        const grandTotalFill: ExcelJS.Fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE2E8F0' }
+        };
+
+        gRow.eachCell((cell, colNumber) => {
+          cell.border = grandTotalBorder;
+          cell.fill = grandTotalFill;
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+
+          const colKey = matrixKeys[colNumber - 1];
+          if (colKey === "Member Name") {
+            cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FF0F172A' } };
+          } else if (colKey === "Total Due (₹)") {
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF991B1B' } };
+          } else if (colKey === "Total Paid (₹)") {
+            cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF065F46' } };
+          }
+        });
       }
 
       // ─── 3. Sheet 3: All Members Directory ────────────────────────

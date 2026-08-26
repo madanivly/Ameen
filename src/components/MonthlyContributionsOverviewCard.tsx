@@ -4,6 +4,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -157,6 +158,62 @@ export function MonthlyContributionsOverviewCard({
     };
   };
 
+  // Pre-calculate all member statuses for clean rendering and accurate footer summaries
+  const membersDueInfo = useMemo(() => {
+    return members.map((m) => {
+      const info = getMemberDueInfo(m);
+      return { member: m, ...info };
+    });
+  }, [members, transactions, cycleMonths, activeCycleCutoffMonthKey]);
+
+  // Aggregate footer totals across all active members
+  const totalActiveShares = useMemo(() => {
+    return membersDueInfo.reduce((sum, item) => sum + item.shares, 0);
+  }, [membersDueInfo]);
+
+  const totalMonthlyTargetExpected = useMemo(() => {
+    return totalActiveShares * 100;
+  }, [totalActiveShares]);
+
+  const monthlyTotalsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { totalPaid: number; paidCount: number; pendingCount: number; dueCount: number }
+    >();
+
+    cycleMonths.forEach((mk) => {
+      let totalPaid = 0;
+      let paidCount = 0;
+      let pendingCount = 0;
+      let dueCount = 0;
+
+      membersDueInfo.forEach((item) => {
+        const st = item.paymentMap.get(mk);
+        const paidAmt = item.paidAmountMap.get(mk) || item.targetMonthly;
+        if (st === "confirmed") {
+          totalPaid += paidAmt;
+          paidCount++;
+        } else if (st === "pending") {
+          pendingCount++;
+        } else {
+          dueCount++;
+        }
+      });
+
+      map.set(mk, { totalPaid, paidCount, pendingCount, dueCount });
+    });
+
+    return map;
+  }, [cycleMonths, membersDueInfo]);
+
+  const grandTotalDueAmount = useMemo(() => {
+    return membersDueInfo.reduce((sum, item) => sum + item.totalDueAmount, 0);
+  }, [membersDueInfo]);
+
+  const pendingRemindersCount = useMemo(() => {
+    return membersDueInfo.filter((item) => item.totalDueAmount > 0).length;
+  }, [membersDueInfo]);
+
   // Handle WhatsApp Reminder in Malayalam based strictly on 15th cut-off rule
   const handleWhatsAppReminder = (m: any) => {
     let rawWa = (m.whatsapp || m.mobile || "").replace(/\D/g, "");
@@ -241,16 +298,7 @@ export function MonthlyContributionsOverviewCard({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {members.map((m) => {
-              const {
-                paymentMap,
-                paidAmountMap,
-                shares,
-                targetMonthly,
-                dueMonthsBeforeCutoff,
-                totalDueAmount,
-              } = getMemberDueInfo(m);
-
+            {membersDueInfo.map(({ member: m, paymentMap, paidAmountMap, shares, targetMonthly, totalDueAmount }) => {
               return (
                 <TableRow key={m.id} className="hover:bg-slate-50/80 transition-colors">
                   <TableCell className="font-medium text-slate-900 py-3">
@@ -338,6 +386,50 @@ export function MonthlyContributionsOverviewCard({
               );
             })}
           </TableBody>
+          <TableFooter className="bg-slate-100/95 border-t-2 border-slate-300 font-semibold text-slate-900 sticky bottom-0">
+            <TableRow className="border-t-2 border-slate-300 bg-slate-100 hover:bg-slate-100">
+              <TableCell className="py-3.5 font-extrabold text-slate-900 text-sm">
+                <div className="font-bold text-sm tracking-wide text-slate-900">TOTAL</div>
+                <div className="text-[11px] font-normal text-slate-500">{members.length} Member{members.length !== 1 ? 's' : ''}</div>
+              </TableCell>
+              <TableCell className="text-center font-bold text-slate-900 py-3.5">
+                <div className="text-sm font-extrabold text-slate-900">{totalActiveShares}</div>
+                <div className="text-[10px] font-medium text-slate-500">Shares</div>
+              </TableCell>
+              {cycleMonths.map((mk) => {
+                const stats = monthlyTotalsMap.get(mk) || { totalPaid: 0, paidCount: 0, pendingCount: 0, dueCount: 0 };
+                const isAdvance = mk > activeCycleCutoffMonthKey;
+                const pct = totalMonthlyTargetExpected > 0 ? Math.round((stats.totalPaid / totalMonthlyTargetExpected) * 100) : 0;
+                return (
+                  <TableCell key={mk} className="text-center py-3.5 px-2">
+                    <div className={`text-xs font-bold ${stats.totalPaid > 0 ? (isAdvance ? "text-purple-900 font-extrabold" : "text-emerald-800 font-extrabold") : "text-slate-500"}`}>
+                      ₹{stats.totalPaid.toLocaleString()}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                      {stats.paidCount}/{members.length} ({pct}%)
+                    </div>
+                  </TableCell>
+                );
+              })}
+              <TableCell className="text-right font-extrabold text-sm py-3.5">
+                <div className={grandTotalDueAmount > 0 ? "text-rose-600 font-extrabold text-sm" : "text-emerald-600 font-extrabold text-sm"}>
+                  ₹{grandTotalDueAmount.toLocaleString()}
+                </div>
+                <div className="text-[10px] font-normal text-slate-500">Total Dues</div>
+              </TableCell>
+              <TableCell className="text-center py-3.5">
+                {pendingRemindersCount > 0 ? (
+                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-300 font-bold text-xs py-1 px-2.5 w-full justify-center shadow-none">
+                    {pendingRemindersCount} Pending Reminder{pendingRemindersCount !== 1 ? 's' : ''}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-bold text-xs py-1 px-2.5 w-full justify-center shadow-none">
+                    All Cleared ✓
+                  </Badge>
+                )}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </div>
     </Card>
